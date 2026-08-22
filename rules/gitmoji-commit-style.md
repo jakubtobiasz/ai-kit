@@ -1,5 +1,8 @@
 ---
-description: Commit messages and history hygiene
+description: >-
+  Gitmoji-prefixed STE commit subjects and single-responsibility published
+  history. Always apply when creating or rewriting commits or preparing a
+  push or pull request.
 cursor:
     alwaysApply: true
 aibits:
@@ -7,45 +10,87 @@ aibits:
         ~/skills/asd-ste100
 ---
 
-# Committing
+# Gitmoji commit style
 
-## Messages
+## Scope
 
-- Commit messages must be English ASD-STE100 skill after the gitmoji.
-- Commit messages must be business-oriented
-  - **GOOD** Add handling a remote config file
-  - **GOOD** Handle a config file upload
-  - **BAD** Create an organization entity
-- Commit messages must follow gitmoji convention
-  - **GOOD** ♻️ Extract common logic from the XYZ service
-  - **BAD** Extract common logic from the XYZ service
-- Commits should be a single-responsible
-  - **GOOD** ♻️ Extract common logic from the XYZ service
-  - **BAD** ♻️ Extract common logic from the XYZ service and configure entity
-- Commits with multiple responsibilities should be split into more than one
+This rule governs commit subjects and published branch history on push and pull request.
 
-## History hygiene (before push / PR)
+It is global unless a more specific rule overrides it.
 
-Prefer a **small number of coherent commits** over many micro-commits for the same change set.
+Local mid-work commits MAY ignore message style until publish.
 
-- **Do not** leave a trail of WIP / fixup / “note”, “tweak link”, “drop artifact”, or “clarify wording” commits that belong to the same concern.
-- **Before** opening or updating a PR, squash or rewrite that noise into the fewest single-responsibility commits that still match the rules above (typically 1–3 for a docs/ADR/skill change; one commit per PLAN group for implementation work).
-- A branch whose commit count is large relative to the file count (e.g. ~10 commits for ~10 files of the same initiative) is a smell — squash before you push or force-push with lease on the feature branch.
-- Mid-work local commits are fine; the **published** branch history must be reviewable.
+## Principle
+
+A published commit starts with a gitmoji. Then it states one business change in English STE. Published history has no WIP or fixup noise.
+
+## Priority
+
+This rule owns the gitmoji prefix, business wording, one responsibility per commit, and published-history shape.
+
+English STE for the words after the gitmoji comes from `rules/asd-ste100.md` and the `asd-ste100` skill.
+
+This rule does not override explicit user-supplied commit text when the user gave the full message.
+
+## Rules
+
+- MUST start the commit subject with a gitmoji, then a space, then English STE.
+- MUST follow [gitmoji](https://gitmoji.dev) for the prefix.
+- MUST describe the user-visible or business change.
+- MUST NOT name a class, table, or entity unless that artifact is the user-visible change.
+- MUST give each published commit one responsibility.
+- MUST NOT join unrelated changes with "and".
+- MUST publish the fewest single-responsibility commits that cover the change.
+- MUST NOT publish WIP, fixup, or "tweak" / "note" / "drop" commits for the same concern.
+- SHOULD NOT publish about one commit per file for one initiative.
+- MUST write the English after the gitmoji with the `asd-ste100` skill. Strict mode.
+
+## Exceptions
+
+- Local mid-work commits MAY use any subject until publish.
+- Merge and revert commits MAY keep the generated subject.
+- If the user supplied the full commit message, MUST use that text.
+
+## Examples
+
+### Prefer
 
 ```text
-# BAD — published history
-📝 Convene board votes as architect seats
-📝 Clarify architect seats for implementation consensus
-📝 Persist BV-0002 …
-📝 Accept ADR-0004 …
-📝 Link ADR-0004 from root AGENTS …
-📝 Mention ADR-0004 in ADR index …
-📝 Point BV-0002 at landed ADR-0004 …
-📝 Drop idea artifacts …
-📝 Note idea markdown is WIP …
-
-# GOOD — same end state, published history
-📝 Convene board votes as architect seats
-📝 Adopt rich domain models in core
+♻️ Extract shared validation so checkout rejects invalid carts
 ```
+
+```text
+🎉 Add CSV product import so staff can load a catalog
+```
+
+### Avoid
+
+```text
+Extract common logic from the XYZ service
+```
+
+No gitmoji.
+
+```text
+♻️ Extract shared validation and configure the organization entity
+```
+
+Two responsibilities. Names an entity that is not the user-visible change.
+
+```text
+📝 Note idea markdown is WIP
+📝 Tweak link
+📝 Drop artifact
+```
+
+Published trail for one concern.
+
+### Exception
+
+A local `wip` commit on an unpublished branch is allowed. Rewrite it before push or pull request.
+
+## References
+
+- [gitmoji](https://gitmoji.dev) — allowed prefixes
+- `rules/asd-ste100.md` — English STE on durable artifacts
+- `~/skills/asd-ste100` — how to write the English after the gitmoji

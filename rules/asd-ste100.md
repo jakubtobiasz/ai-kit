@@ -1,6 +1,8 @@
 ---
-name: asd-ste100
-description: English STE everywhere
+description: >-
+  English STE on durable artifacts. Match the human only in live chat.
+  Use when writing commits, tickets, skills, rules, comments, errors, or
+  published change text.
 cursor:
     alwaysApply: false
 aibits:
@@ -10,86 +12,95 @@ aibits:
 
 # ASD-STE100 Simplified Technical English
 
-Write English that another agent can parse without a human to ask. Use the **asd-ste100** skill for full rewrite rules, process, and output format.
+## Scope
 
-This rule does **not** reproduce the ASD dictionary. Apply the structural rules with confidence. Treat lexical rules as a direction of travel. See the skill's Source and Scope section when you need more detail.
+This rule governs durable artifacts in this repository and in trackers.
 
-## HARD: language
+Durable artifacts are files, commits, tickets, comments, labels, skills, rules, agent prompts, status reports, and published change text.
 
-**English is the only language for durable work.** Use ASD-STE100 on that English. This is not optional.
+Live chat with the human is out of scope except for the chat-language rule below.
 
-The language the human uses in chat is **only** for the live conversation between the human and you. Do not copy it into anything that lives in version control, a tracker, or a product surface.
+When this rule is loaded, English STE is mandatory for those artifacts. Frontmatter `alwaysApply: false` does not weaken the policy.
 
-Match the human's chat language. The chat language never changes the language of artifacts.
+## Principle
 
-**Always English STE (never mixed with another language):**
+Write English that another agent can parse without a human. Keep the human's chat language in chat only.
 
-- Identifiers, strings, and comments you add
-- Tests, fixtures, log lines, error messages, user-visible copy you add
-- Commits, branch names, and published change title and body
-- Issue tracker items, comments, labels, project docs
-- Skills, rules, and agent instructions in this repo
-- Subagent prompts and status reports
+## Priority
 
-**Never:**
+This rule takes precedence over matching the human's language in artifacts.
 
-- Translate a non-English chat request into a non-English ticket, commit, or published change
-- Leave non-English text in a string, comment, or commit because the human used it in chat
-- Mix languages in one artifact
-- Ask whether to use English. Use English.
+This rule does not override:
 
-A non-English phrase in the human's message is input. Restate it in English STE in the artifact.
+- explicit security requirements
+- higher-priority system instructions
+- `gitmoji-commit-style` for the gitmoji prefix
 
-## Modes
+If the user asks for a non-English artifact, MUST still write the artifact in English STE. MUST NOT ask which language to use.
 
-**Strict** — procedures, error messages, tool descriptions, inter-agent prompts, skill bodies, always-applied rules, comments, log lines, user-visible error strings, tracker issues. Apply every structural rule. Cap instruction sentences at 20 words. Cap description sentences at 25 words.
+STE applies to the English after a required prefix such as gitmoji. It does not apply to the prefix itself.
 
-**STE-flavored** — published change descriptions and explanatory prose. Apply structural rules. Do not lock one word per concept as if the dictionary were in this repo.
+## Rules
 
-Pick Strict when a wrong reading has a cost. Pick STE-flavored for explanatory English prose. If unsure, pick Strict.
+- MUST write durable artifacts in English STE.
+- MUST follow the `asd-ste100` skill for rewrite rules, process, and output format.
+- MUST match the human's language in live chat only.
+- MUST NOT copy the human's chat language into a durable artifact.
+- MUST NOT mix languages in one artifact.
+- MUST NOT ask whether to use English.
+- MUST pick the mode from the surface table. If unsure, MUST pick Strict.
+- MUST keep paths, command names, and identifiers unchanged.
+- MUST keep hedges (`may`, `could`, `sometimes`). MUST NOT promote a hedge to a fact.
+- MUST NOT write a comment that only restates the next line.
+- A comment MUST state an invariant or a trade-off.
+- MUST NOT change existing product copy unless this change owns that string.
+- MUST NOT claim certified ASD-STE100 dictionary compliance.
+- MUST NOT reproduce ASD's official dictionary.
 
-## Where it applies
+### Surfaces
 
-| Surface | Mode | Notes |
-| --- | --- | --- |
-| Skills and skill assets that instruct an agent | Strict | Keep paths, identifiers, and output contracts unchanged |
-| Rules | Strict | Same |
-| Comments you add | Strict | Write a comment only when it adds value |
-| User-visible errors, service messages, and log lines you add | Strict | Do not change existing product copy in the same change unless that change owns the string |
-| Agent-to-agent prompts and status reports | Strict | One instruction per sentence |
-| Issue tracker items and comments | Strict | Title and body in English STE even when the human asked in another language |
-| Commits | Strict | English STE in the message body |
-| Published change title and body | STE-flavored | English only |
-| Chat with the human | Match the human | Chat is not an artifact |
+| Surface | Mode |
+| --- | --- |
+| Skills and skill assets that instruct an agent | Strict |
+| Rules | Strict |
+| Comments you add | Strict |
+| User-visible errors, service messages, and log lines you add | Strict |
+| Agent-to-agent prompts and status reports | Strict |
+| Issue tracker items and comments | Strict |
+| Commit message English after the gitmoji | Strict |
+| Published change title and body | STE-flavored |
+| Chat with the human | Match the human |
 
-## Do
+A published change is a pull request or other reviewable change description sent outside this chat.
 
-- Use active voice. Name the actor.
-- Give one instruction per sentence.
-- Keep subject, verb, and article. Do not drop words to save space.
-- Split a list of 3+ steps into a numbered or bullet list.
-- Put leftover sentences after the list. Do not indent them under the last item.
-- Keep hedges (`may`, `could`, `sometimes`). Do not promote a hedge to a fact.
-- Reuse one name for one thing in a file. Do not rotate synonyms for the same entity.
-- Keep paths, command names, and identifiers unchanged.
+## Exceptions
 
-## Do not
+- Live chat MAY use the human's language.
+- Identifiers, symbol names, and generated schema text MAY stay as written by the system or the codebase.
+- Creative or marketing copy is out of scope. MUST NOT apply STE to it.
+- Existing product strings this change does not own MAY stay unchanged.
+- A required prefix such as gitmoji MAY stand before the English STE subject.
 
-- Use a semicolon.
-- Use a phrasal verb when a single verb exists. Write `start`, not `spin up`. Write `remove`, not `take off`. Write `read`, not `dive into`.
-- Stack 4+ nouns (`the handler that sets task-queue priority`, not `the agent task queue priority handler`).
-- Use marketing adjectives (`seamless`, `robust`, `powerful`, `blazing-fast`).
-- Apply STE to identifiers, symbol names, or generated schema text.
-- Rewrite creative or marketing copy.
-- Drop a safety condition, exception, or scope qualifier to shorten a sentence.
-- Claim certified ASD-STE100 dictionary compliance. This repo does not ship the official dictionary.
+## Examples
 
-## Comments
+### Prefer
 
-Clear names beat comments. When you write a comment, write it in Strict STE English. One idea per sentence. State the invariant or the trade-off. Do not narrate the next line.
+Human: "dodaj bilet na import CSV"
 
-## Communication
+Ticket title: `Add CSV product import`
 
-In English chat and published change text, prefer short active sentences. Lead with the fact. Then give the reason. Do not stack hedges. Do not open with a negation.
+### Avoid
 
-When you rewrite existing English on request, follow the skill process. Default output is the rewritten text alone, unless this task asked you to edit files in place.
+Human: "dodaj bilet na import CSV"
+
+Ticket title: `Dodaj bilet na import CSV`
+
+### Exception
+
+A French error string that this change does not own stays in French.
+
+## References
+
+- `~/skills/asd-ste100` — rewrite rules, process, and output format
+- `skills/asd-ste100/references/writing-rules.md` — Issue 9, dictionary limits, redistribution
+- `rules/gitmoji-commit-style.md` — gitmoji prefix and published-history shape
