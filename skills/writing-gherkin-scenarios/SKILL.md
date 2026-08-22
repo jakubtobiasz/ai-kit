@@ -2,10 +2,6 @@
 name: writing-gherkin-scenarios
 description: Write clear, testable Gherkin acceptance criteria for a ticket — declarative Given/When/Then scenarios in real domain language, in the Sylius style. Use whenever you are writing or improving the `## Acceptance criteria` of a ticket or user story, drafting `Scenario:` blocks, or turning a requirement into behavior examples. Triggers include "write acceptance criteria", "write the scenarios", "write this as Gherkin", "add Given/When/Then", "these acceptance criteria are weak", and the write-issue skill drafting a ticket's AC block. Teaches declarative-over-imperative phrasing, one-behavior-per-scenario, Background and Scenario Outline, and concrete test data. Do NOT use for implementing step definitions / glue code, running tests, or writing non-Gherkin test code (unit / integration).
 argument-hint: "[ticket file or requirement]"
-license: MIT
-metadata:
-  author: atlas
-  version: "1.0.0"
 ---
 
 # Writing Gherkin Scenarios

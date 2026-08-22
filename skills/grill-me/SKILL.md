@@ -7,18 +7,7 @@ description: >-
   pieces, vague or untestable acceptance criteria, hidden dependencies, and
   scope ambiguity. Triggers include "grill these tickets", "grill my PRD",
   "grill the TECH_PRD", "poke holes in this", "stress-test this spec", "what am
-  I missing", "red-team this plan", and the product-manager,
-  technical-product-manager, or delivery-planner agents invoking it in a
-  subagent. Read the artifact. Attack it from fixed angles. Return a concise,
-  ranked findings list — each a categorized weakness with why it bites and a
-  suggested fix or question. Do NOT use it to rewrite or fix the artifact (it
-  returns findings only, and the human decides). It does NOT interview a live
-  user (it grills what is written). It is NOT a code review.
-argument-hint: "[file or .ai/idea/<slug>/ dir]"
-license: MIT
-metadata:
-  author: atlas
-  version: "1.0.1"
+  I missing", "red-team this plan"
 ---
 
 # Grill Me
