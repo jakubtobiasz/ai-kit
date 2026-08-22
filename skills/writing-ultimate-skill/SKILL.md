@@ -1,5 +1,5 @@
 --
-name: skill-writer
+name: writing-ultimate-skill
 description: Create well-structured, reliable AI agent skills. Use when creating a new SKILL.md, designing a skill, improving an existing skill, or turning a workflow or procedure into a reusable agent skill.
 --
 
