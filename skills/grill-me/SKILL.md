@@ -6,15 +6,15 @@ description: >-
   hard, skeptical review that searches for weak assumptions, gaps, missing
   pieces, vague or untestable acceptance criteria, hidden dependencies, and
   scope ambiguity. Triggers include "grill these tickets", "grill my PRD",
-  "grill the TECH_PRD", "poke holes in this", "stress-test this spec", "what am
-  I missing", "red-team this plan"
+  "grill the TECH_PRD", "poke holes in this PRD", "stress-test this spec",
+  "what am I missing on this ticket", "red-team this plan"
 ---
 
 # Grill Me
 
 ## Purpose
 
-You are an adversarial reviewer of a written PM artifact. Find failures in the text before implementation starts. A finding now is cheap. The same gap during a sprint is expensive. Grill the written artifact. Do not ask the author. Do not change the artifact.
+Find failures in a written PM artifact before implementation. Do not ask the author. Do not change the artifact.
 
 Grill means search the text for weaknesses and return findings. Attack the work. Never attack the author.
 
@@ -25,7 +25,7 @@ Grill means search the text for weaknesses and return findings. Attack the work.
 Use this skill when:
 
 - a human asks to grill tickets, a PRD, a TECH_PRD, a spec, or a plan
-- a human asks to poke holes, stress-test a spec, red-team a plan, or find what is missing
+- a human asks to poke holes in a PRD, stress-test a spec, red-team a plan, or find what a ticket or spec is missing
 - `product-manager`, `technical-product-manager`, or `delivery-planner` invokes this skill in a subagent
 - a written PM artifact must be tested for weaknesses before the team accepts it
 
@@ -35,6 +35,9 @@ Do not use this skill when:
 
 - the task is to rewrite or fix the artifact
 - the task is a code review
+- the task is a security review of a running system
+- the task is an ADR or architecture review
+- the target is not a written PM artifact
 - the task is to interview a live user
 - no written artifact exists yet
 
@@ -60,7 +63,7 @@ If acceptance criteria use Gherkin, apply the `writing-gherkin-scenarios` bar: d
 8. For each weakness, cite the file and section. Quote the weak line. State what fails during implementation.
 9. Discard a note that only says "vague". A finding names the line and the failure.
 10. If an angle has no weakness, write one line that the angle is solid. Continue.
-11. Rank findings from most severe to least severe.
+11. Rank findings from most costly to least costly.
 12. Return findings only. Use the output format. End with **Top 3 must-fix**.
 13. Do not edit any file.
 
@@ -109,25 +112,33 @@ The same rules apply when a human invokes this skill in the main thread.
 
 ## Attack angles
 
-Check every angle. Be specific. "Vague" is not a finding. This is a finding: "AC says 'the import works' — works how? what row count, what on a malformed row?"
+Check every angle. A finding cites a file, quotes a line, and names the implementation failure. "Vague" is not a finding.
 
-- **Assumptions** — What is stated as fact but never verified? What breaks if it is false?
-- **Completeness / gaps** — Check missing states (empty, error, loading, partial), missing roles, unhandled edge cases, absent non-functional needs (performance, security, accessibility), and whole tickets or steps that should exist but do not.
-- **Testability** — Is each acceptance criterion concrete and falsifiable? Flag anything that cannot be objectively checked ("works", "is fast", "handles errors gracefully"). For Gherkin AC, apply the `writing-gherkin-scenarios` bar: declarative, one behavior, concrete values.
-- **Scope** — What is ambiguously in vs. out? Where is the creep? Is a huge amount of work concealed in one innocent line?
-- **Dependencies & order** — unstated coupling between tickets, wrong sequencing, circular dependencies, a "depends on" that is missing.
-- **Feasibility & risk** — What is technically risky, unknown, or optimistically sized? What is the thing most likely to fail?
-- **Clarity** — Could a stranger execute this cold, without the author in the room? Where exactly would they stall or guess?
-- **Contradictions** — internal conflicts between sections, tickets, or a ticket and its parent.
+- **Assumptions** — a stated fact that was never verified
+- **Completeness / gaps** — missing state, role, edge, non-functional need, or ticket
+- **Testability** — an acceptance criterion that cannot be failed
+- **Scope** — in vs out is unclear, or one line hides a large body of work
+- **Dependencies & order** — unstated coupling, wrong sequence, or a missing `depends on`
+- **Feasibility & risk** — the risky part is unnamed or sized as easy
+- **Clarity** — a new reader cannot execute this without the author
+- **Contradictions** — two statements that cannot both be true
 
-Read `references/attack-angles.md` for probe questions and the finding-quality bar.
+When you check completeness, walk these in order:
+
+1. States (empty, error, loading, partial)
+2. Roles
+3. Edges
+4. Non-functionals the feature type requires
+5. Missing tickets or steps
+
+Read `references/attack-angles.md` for probe questions.
 
 ## Constraints
 
 - MUST read the full target before you report.
 - MUST check every attack angle.
 - MUST cite file, section, and a quoted line on every finding.
-- MUST rank most severe first.
+- MUST rank most costly first.
 - MUST end with **Top 3 must-fix**.
 - MUST NOT edit the artifact or any other file.
 - MUST NOT rewrite the artifact in the response.
@@ -143,9 +154,9 @@ Read `references/attack-angles.md` for probe questions and the finding-quality b
 
 ## Output format
 
-A concise, ranked list. Most severe first. No praise. No filler. No rewrite. Each finding:
+A concise, ranked list. Most costly first. No praise. No filler. No rewrite. Each finding:
 
-> **[angle] one-line weakness** — _where_ (file / section) — why it bites — suggested fix or the question that must be answered.
+> **[angle] one-line weakness** — _where_ (file / section) — why it fails during implementation — suggested fix or the question that must be answered.
 
 If the artifact is genuinely solid on an angle, say so in one line and continue:
 
@@ -171,7 +182,7 @@ Before you return:
 - [ ] Every attack angle was checked.
 - [ ] Each finding cites a file and section, quotes a line, states the failure, and gives a fix or a question.
 - [ ] No finding is only the word "vague".
-- [ ] Findings are ranked most severe first.
+- [ ] Findings are ranked most costly first.
 - [ ] Solid angles are one line each.
 - [ ] No file was edited.
 - [ ] The response is findings only. No rewrite. No praise. No filler.
@@ -205,6 +216,18 @@ Input: every acceptance criterion is falsifiable.
 
 Expected: `**[testability] solid** — no finding.` Continue with the other angles.
 
+### Gherkin AC
+
+Input: a scenario with "When I click `#submit`" and a second `When` that places an order.
+
+Expected: flag **[testability]**. The step is imperative. The scenario covers two behaviors. Quote the lines. Do not rewrite the AC.
+
+### Source code attached
+
+Input: the caller points at application source instead of a PRD, ticket, spec, or plan.
+
+Expected: refuse. This skill is not a code review.
+
 ## Failure Modes
 
 - Target path missing and not inferable → stop. Name the required input. Do not guess.
@@ -217,6 +240,6 @@ Expected: `**[testability] solid** — no finding.` Continue with the other angl
 
 ## References
 
-- `references/attack-angles.md` — probe questions per angle, finding-quality bar, ranking notes. Read once per run after you read the artifact.
+- `references/attack-angles.md` — probe questions per angle. Read once per run after you read the artifact.
 - `references/examples.md` — good vs bad findings and a full sample list. Read when the finding bar is unclear.
 - `writing-gherkin-scenarios` — Gherkin AC bar. Read when the artifact contains Gherkin and the skill is available.

@@ -11,6 +11,7 @@ Two authentic features to imitate, then a set of before/after rewrites for the s
   - [Vague → concrete](#vague--concrete)
   - [Multiple When → split behaviors](#multiple-when--split-behaviors)
   - [Testing everything → one behavior](#testing-everything--one-behavior)
+  - [Glue code requested → refuse](#glue-code-requested--refuse)
 
 ---
 
@@ -202,3 +203,11 @@ Scenario: Registering is rejected when the password is too short
 ```
 
 Each scenario now fails for exactly one reason, and its name tells you which. That is what makes a failing suite diagnosable instead of a mystery.
+
+### Glue code requested → refuse
+
+This skill writes ticket AC. It does not write step definitions.
+
+Input: "write the Cypress steps / step defs for these scenarios."
+
+Expected: refuse. Point at the skill's Do not use when. Leave the Gherkin unchanged unless the user also asked to improve the AC.

@@ -1,33 +1,6 @@
 # Attack angles — probe questions
 
-Read this after you read the artifact. Check every angle. Write a finding only when you can cite a file, quote a line, and name the failure.
-
-## Finding-quality bar
-
-A finding is valid only when all of these are true:
-
-1. It has an angle tag from the list below.
-2. It names a file and a section.
-3. It quotes the weak line.
-4. It states what goes wrong during implementation.
-5. It gives a suggested fix, or the question that must be answered.
-
-"Vague" is not a finding. Rewrite the note until it quotes a line and names a failure, or drop it.
-
-A question inside a finding is for the human who will edit the artifact later. Do not send that question in chat.
-
-## Ranking
-
-Rank by cost if the gap is found during implementation. Use this order:
-
-1. **Contradictions** — two valid readings. Implementers will split.
-2. **Completeness / gaps** — missing state, role, ticket, or step. The sprint delivers incomplete work.
-3. **Testability** — "done" cannot be checked. The ticket cannot be accepted.
-4. **Scope** — in vs out is unclear, or one line hides a large body of work.
-5. **Dependencies & order** — tickets will stall or loop.
-6. **Assumptions** — a stated fact is false and the plan breaks.
-7. **Feasibility & risk** — the risky part is unnamed or sized as easy.
-8. **Clarity** — a stranger stalls or guesses.
+Read this after you read the artifact. The finding bar and the cost rank live in `SKILL.md`. Use this file for probe questions only.
 
 Do not invent findings to fill an angle. If the angle is solid, write one line and continue.
 
@@ -134,7 +107,7 @@ Do not invent technical risk that the text does not imply. Tie the risk to a lin
 
 ## Clarity
 
-Ask: could a stranger execute this cold, without the author in the room?
+Ask: can a new reader execute this without the author?
 
 Probe:
 

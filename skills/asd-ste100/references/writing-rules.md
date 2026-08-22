@@ -1,6 +1,6 @@
 # ASD-STE100 Writing Rules — Summary and Sources
 
-This file summarizes the public, official description of ASD-STE100 (Simplified Technical English). It paraphrases rule _categories_; it does not reproduce the standard's text or its ~900-word dictionary verbatim. For the authoritative document, request the free download at the official site.
+This file summarizes the public, official description of ASD-STE100 (Simplified Technical English). It paraphrases rule _categories_. It does not reproduce the standard's text or its ~900-word dictionary verbatim. For the authoritative document, request the free download at the official site.
 
 ## What ASD-STE100 Is
 
@@ -11,6 +11,12 @@ ASD-STE100 is a controlled natural language, first released in 1986 (as AECMA Do
 - **53 writing rules across 9 sections** covering word choice, grammar, sentence structure, and style.
 - **A dictionary** of roughly 900 approved words, each restricted to one meaning and one part of speech, plus roughly 1,200 words to avoid with suggested replacements.
 - **A terminology allowance**: organizations may define their own dictionary of approved technical nouns and verbs beyond the base ~900 words, for domain-specific vocabulary the base dictionary can't cover.
+
+## Redistribution and dictionary
+
+ASD-STE100 is free to obtain. It is not free to redistribute. Issue 9, page 2 states that no reproduction or publication of it, in whole or in part, shall be made without the written authority of an officer of ASD. Free reproduction rights apply only to eight listed categories (ASD/AIA/AIAC member associations and their member companies and customers, member-state defence ministries, A4A, airworthiness authorities, and universities and research institutes for educational purposes). This project is in none of them, so the dictionary stays out of this repo.
+
+This skill applies the underlying principle: pick the plainest common word and use it the same way every time. It does not check against a fixed word list. When exact ASD-approved wording matters (aircraft maintenance documentation), get the standard and check word-by-word against the real dictionary. Request it from the [official downloads page](https://www.asd-ste100.org/STE_downloads.html). That page is a request form that emails a link. It is not a direct download.
 
 ## Rule Categories (Paraphrased)
 
