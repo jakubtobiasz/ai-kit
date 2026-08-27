@@ -8,6 +8,10 @@ description: >-
   scope ambiguity. Triggers include "grill these tickets", "grill my PRD",
   "grill the TECH_PRD", "poke holes in this PRD", "stress-test this spec",
   "what am I missing on this ticket", "red-team this plan"
+aibits:
+  deps:
+    - ~/skills/writing-gherkin-scenarios
+    - ~/skills/asd-ste100
 ---
 
 # Grill Me
