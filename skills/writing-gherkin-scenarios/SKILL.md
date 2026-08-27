@@ -2,6 +2,9 @@
 name: writing-gherkin-scenarios
 description: Write or rewrite the Gherkin block under a ticket's `## Acceptance criteria`. Use declarative Given/When/Then in domain language, in the Sylius style. Use when writing or improving ticket AC, or when a caller asks for Gherkin on a ticket or user story. Triggers include "write acceptance criteria", "write the scenarios", "write this as Gherkin", "add Given/When/Then", and "these acceptance criteria are weak". Do not use for step definitions, test runners, unit or integration tests, Cypress, or suite `.feature` files unless the user asked for ticket AC.
 argument-hint: "[ticket file or requirement]"
+aibits:
+  deps:
+    - ~/skills/asd-ste100
 ---
 
 # Writing Gherkin Scenarios
