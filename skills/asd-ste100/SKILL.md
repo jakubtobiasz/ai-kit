@@ -1,6 +1,13 @@
 ---
 name: asd-ste100
-description: Rewrite English so another agent can parse it without a human. Use for tool descriptions, error messages, inter-agent instructions, system prompts, and status reports when a wrong reading has a cost. Triggers: disambiguate, STE100 rewrite, apply Simplified Technical English, controlled-language rewrite. Do not use for creative or marketing copy, translation, grammar-only proofreading, certified aerospace STE, or to improve the substance of hollow text.
+description: >-
+  Rewrite English so another agent can parse it without a human. Use for
+  tool descriptions, error messages, inter-agent instructions, system
+  prompts, and status reports when a wrong reading has a cost. Triggers
+  include disambiguate, STE100 rewrite, apply Simplified Technical
+  English, and controlled-language rewrite. Do not use for creative or
+  marketing copy, translation, grammar-only proofreading, certified
+  aerospace STE, or to improve the substance of hollow text.
 ---
 
 # Simplified Technical English (ASD-STE100)
