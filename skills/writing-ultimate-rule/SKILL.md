@@ -1,6 +1,9 @@
 ---
 name: writing-ultimate-rule
 description: Create clear, precise, and enforceable AI agent rules. Use when creating a new rule, improving an existing rule, or converting coding standards, behavioral constraints, conventions, or policies into reusable agent rules.
+aibits:
+  deps:
+    - ~/skills/asd-ste100
 ---
 
 # Rule Writer
