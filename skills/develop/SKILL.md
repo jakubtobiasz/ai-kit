@@ -2,22 +2,26 @@
 name: develop
 description: >-
   Run one unit of work to a reviewed, resumable, subagent-driven
-  implementation. Accept a tracker key (Linear/Jira/etc.), an
-  .ai/idea/<slug>/TASK_NN.md path, a pasted ticket body, or raw freeform
-  intent that describes what to build. Triggers include "implement TICKET-123",
-  "/develop add retry to the agent", "develop this ticket", "build this task",
-  "start work on <ticket>", "pick up <key>", "I want to refactor X". Run four
-  phases. Refine turns TICKET into reviewed TASK.md. Split turns TASK into
-  reviewed PLAN.md with a mermaid group graph and a commit per group. Implement
-  uses one subagent per group. Review is a per-group findings gate before each
-  commit. Coordinate the scout, architect, developer, and reviewer agents. When
-  the source is a tracker issue, keep a live PLAN.md file attachment on that
-  issue aligned with local checkbox progress for other agents. Resume from
-  .ai/task/<task-id>/ state. Do NOT use for multi-ticket story delivery (that
-  is deliver-story). Do NOT use for addressing PR/code-review follow-ups on an
-  existing task (that is address-review). Do NOT use for writing/refining a PRD
-  (that is product-manager / technical-product-manager).
-argument-hint: "[tracker key | idea path | freeform intent]"
+  implementation. Accept a tracker key (Linear/Jira/etc.), a pasted ticket
+  body, or raw freeform intent that describes what to build. Triggers
+  include "implement TICKET-123", "/develop add retry to the agent",
+  "develop this ticket", "build this task", "start work on <ticket>",
+  "pick up <key>", "I want to refactor X". Run four phases. Refine turns
+  TICKET into reviewed TASK.md. Split turns TASK into reviewed PLAN.md with
+  a mermaid group graph and a commit per group. Implement uses one subagent
+  per group. Review is a per-group findings gate before each commit.
+  Coordinate the scout, architect, developer, and reviewer agents. Persist
+  SCOUT.md, DECISIONS.md, and derived STATUS.md under .ai/task/<task-id>/.
+  When the source is a tracker issue, keep a live PLAN.md file attachment on
+  that issue aligned with local checkbox progress for other agents. Resume
+  from .ai/task/<task-id>/ state. After all groups are committed, offer docs
+  or ADR promotion (default skip). Do NOT use an .ai/idea/ path as a lasting
+  source (push first; task-id is the tracker key). Do NOT use for multi-ticket
+  story delivery (that is deliver-story). Do NOT use for addressing
+  PR/code-review follow-ups on an existing task (that is address-review). Do
+  NOT use for writing/refining a PRD (that is product-manager /
+  technical-product-manager).
+argument-hint: "[tracker key | freeform intent]"
 license: MIT
 metadata:
   version: "1.0.0"
@@ -27,6 +31,7 @@ aibits:
     - ~/agents/reviewer.md
     - ~/agents/scout.md
     - ~/agents/architect.md
+    - ~/skills/ai-dir
 ---
 
 # Develop
@@ -35,7 +40,7 @@ aibits:
 
 Run one unit of work from source to a reviewed, resumable implementation. You are the orchestrator. You run in the main thread. That thread is the only place that can spawn subagents.
 
-You own the human gates, the state files, and every commit. You never write `TASK.md`, `PLAN.md`, or application code yourself.
+You own the human gates, the state files, and every commit. You never write `TASK.md`, `PLAN.md`, or application code yourself. You do write derived `.ai` state per `ai-dir`: bootstrap, `STATUS.md`, `task/_index.md`, `SCOUT.md`, `DECISIONS.md`.
 
 This skill cannot run as a function from `deliver-story`. It is a main-thread skill.
 
@@ -45,8 +50,8 @@ This skill cannot run as a function from `deliver-story`. It is a main-thread sk
 
 Use this skill when:
 
-- the user wants one ticket, idea file, or freeform intent built
-- the input is a tracker key, an `.ai/idea/<slug>/TASK_NN.md` path, a pasted ticket body, or raw intent
+- the user wants one ticket, tracker issue, or freeform intent built
+- the input is a tracker key, a pasted ticket body, or raw intent
 - work must resume from `.ai/task/<task-id>/`
 
 ### Do not use when
@@ -56,6 +61,7 @@ Do not use this skill when:
 - the user wants every ticket in a breakdown built (`deliver-story`)
 - the user wants PR or code-review follow-ups on an existing task (`address-review`)
 - the user wants a PRD written or refined (`product-manager` / `technical-product-manager`)
+- the input is an `.ai/idea/<slug>/` path with no recorded tracker key (push first)
 
 ## Context
 
@@ -100,14 +106,15 @@ flowchart TD
     P4 -->|clean / waived| Commit["Commit group — §4"]
     Commit --> Next{"more groups?"}
     Next -->|yes| P3
-    Next -->|no| Done(["Optional whole-task sweep — done, resumable"])
+    Next -->|no| Close["Close-out: STATUS done, optional docs/ADR — §8"]
+    Close --> Done(["done, resumable"])
 ```
 
 The numbered steps are the authority.
 
 ### 0. Resume
 
-On entry, inspect `.ai/task/<task-id>/`. Tell the user where you resume before you act.
+On entry, follow `ai-dir` bootstrap if `.ai/AGENTS.md` is missing. Inspect `.ai/task/<task-id>/`. Read `STATUS.md` if it exists. Verify it against `PLAN.md`. PLAN wins. Then rewrite STATUS. Tell the user where you resume before you act.
 
 1. If there is no `TICKET.md`, go to §1. Then start Phase 1.
 2. If `TASK.md` is present and unapproved (no `PLAN.md`), present the Phase 1 gate again (§2.4). Fast path shows the combined gate.
@@ -117,6 +124,7 @@ On entry, inspect `.ai/task/<task-id>/`. Tell the user where you resume before y
 6. If `[x] implemented` is set and `[x] reviewed` is not, enter Phase 4 (§5) for that group before any commit.
 7. If reviewed is set and committed is not, enter the commit gate (§4).
 8. If a legacy plan uses plain `[x] done`, treat that group as fully complete. Do not run it again.
+9. If `STATUS.md` says `done` and PLAN agrees, run close-out (§8) if docs promotion was never asked.
 
 ### 1. Resolve source and task-id
 
@@ -124,17 +132,17 @@ Pick the source from the invocation argument (`$1`), the user message, or an att
 
 **Source order**
 
-1. **Issue tracker** — the input has the form of a tracker key or issue URL (`TICKET-123`, `ENG-45`, `#123`, a Linear/Jira/GitHub issue URL) **and** an issue-tracker MCP is connected. Fetch the issue (title, description, acceptance criteria, labels). `<task-id>` = the tracker key. Write `TICKET.md` from the fetched issue. Preserve key and metadata. If the MCP is missing or the fetch fails, say so. Then continue to the next source. Do not invent the ticket body.
-2. **Idea file** — the input is `.ai/idea/<slug>/TASK_NN.md` (or a `<slug>/` folder that holds a single ticket). Read its trailing `<!-- Tracker key: ... -->` comment. If it records a real key (not the `filled in when created` placeholder), `<task-id>` = that key. Else `<task-id>` = `<slug>-task-NN`, with `NN` copied as written (two digits) from the filename. Write `TICKET.md` from the file verbatim. Do not use a prompt. The idea file's tracker-key line stays authoritative. On any divergence, the idea file wins.
+1. **Issue tracker** — the input has the form of a tracker key or issue URL (`TICKET-123`, `ENG-45`, `#123`, a Linear/Jira/GitHub issue URL) **and** an issue-tracker MCP is connected. Fetch the issue (title, description, acceptance criteria, labels). `<task-id>` = the tracker key. Write `TICKET.md` from the fetched issue. Preserve key and metadata. If the MCP is missing or the fetch fails, say so. Then continue to the next source. Do not invent the ticket body. Linear wins on divergence from any leftover local file.
+2. **Staging idea file (only if a key is already recorded)** — the input is `.ai/idea/<slug>/TASK_NN.md` and that file's `<!-- Tracker key: ... -->` holds a real key (not the placeholder). `<task-id>` = that key. Fetch the issue from the tracker. Write `TICKET.md` from the tracker, not from the staging file. If the comment is the placeholder or missing → stop. Tell the user to run `push-issues` first. Do not use `<slug>-task-NN` as a lasting id.
 3. **Raw intent (first-class)** — the input is freeform text that describes what to build ("add retry to the agent", "fix null crash in HealthCheck", a pasted ticket body that is not a tracker key, a multi-line brief). This is a valid start path. Do not ask the user to paste the text again. Do not ask the user to write a PRD first.
    - Write `TICKET.md` from the user's words. Use light structure only: a `# Title` (short imperative summary) plus the body preserved as given. Do not invent acceptance criteria, scope, or technical decisions they did not state. If needed, mark gaps as open questions inside the ticket.
    - Write a header on the file with `Source: raw intent` (and no tracker key).
    - Derive a kebab `<task-id>` from the title (≤40 chars, ASCII, no tracker-key shape). Tell the user the chosen id. Use `AskUserQuestion` to confirm the id only when the derivation is ambiguous. Also confirm when the id would collide with an unrelated existing dir.
-4. **Nothing given** — ask once via `AskUserQuestion` what to develop. Give options that cover all three sources above (tracker key, idea file path, or freeform description). Then enter this section again with the answer.
+4. **Nothing given** — ask once via `AskUserQuestion` what to develop. Give options that cover tracker key or freeform description. Then enter this section again with the answer.
 
 **State dir**
 
-Create `.ai/task/<task-id>/` if it is absent. Write `TICKET.md` as above. If the dir already exists, ask via `AskUserQuestion` whether to **resume** (§0) or **overwrite as new** (remove + recreate).
+Follow `ai-dir` bootstrap, then `ai-dir` new task dir. Create `.ai/task/<task-id>/` if it is absent. Write `TICKET.md` as above. Write `STATUS.md` and `DECISIONS.md` from the templates. Update `.ai/task/_index.md`. If the dir already exists, ask via `AskUserQuestion` whether to **resume** (§0) or **overwrite as new** (remove + recreate).
 
 **Fast-path assessment (fresh tickets).** Judge the ticket's complexity (trivial / standard / complex). For a trivial ticket, PROPOSE the fast path. Ask the user to confirm via `AskUserQuestion`. The confirmation is the trigger. Never assume confirmation.
 
@@ -144,8 +152,8 @@ Raw-intent work is often trivial. Still propose the fast path. Never assume the 
 
 ### 2. Phase 1 — Refine (→ TASK.md)
 
-1. **Recon on demand.** For standard and complex tickets only, spawn **scout** with a focused question to map the affected areas. For a real design fork, spawn **architect** with the scout map + ticket context. Fast path (and trivial) skips both.
-2. **Dispatch.** Spawn **developer** (pass Task `model`; consuming-repo picker wins) with the skill `skills/refine-task/SKILL.md`. Give these inputs: the `TICKET.md` path, the target `TASK.md` path, the template `skills/refine-task/assets/task-template.md`, the scout map, and any architect decisions.
+1. **Recon on demand.** For standard and complex tickets only, spawn **scout** with a focused question to map the affected areas. Persist the returned map as `.ai/task/<task-id>/SCOUT.md` per `ai-dir`. For a real design fork, spawn **architect** with the scout map + ticket context. Append each Decision block to `DECISIONS.md`. Fast path (and trivial) skips both.
+2. **Dispatch.** Spawn **developer** (pass Task `model`; consuming-repo picker wins) with the skill `skills/refine-task/SKILL.md`. Give these inputs: the `TICKET.md` path, the target `TASK.md` path, the template `skills/refine-task/assets/task-template.md`, the scout map (`SCOUT.md` if present), and any architect decisions (`DECISIONS.md` if present).
 3. **Escalations.** Handle `NEEDS:` per the iron rule. Re-dispatch until the developer returns the `TASK.md` path.
 4. **Gate.** Present `TASK.md` (path + summary) for review. Re-dispatch on change requests. Loop until the user approves. Fast path delays this gate. Present `TASK.md` at the combined gate in §3. On the standard path, do not start Phase 2 without explicit approval.
 
@@ -154,7 +162,7 @@ Raw-intent work is often trivial. Still propose the fast path. Never assume the 
 1. **Dispatch.** Spawn **developer** (pass Task `model`; consuming-repo picker wins) with the skill `skills/split-task-into-plan/SKILL.md`. Give these inputs: the refined `TASK.md` path, the target `PLAN.md` path, the template `skills/split-task-into-plan/assets/plan-template.md`, and the scout map. A trivial ticket still produces a single-group `PLAN.md`. Never skip the artifact.
 2. **Escalations.** Same as §2.3.
 3. **Gate.** Present `PLAN.md`. Present the mermaid graph, the business-framed group titles, the per-group commit messages, and the dependencies. Loop until the user approves. On the fast path, present `TASK.md` and `PLAN.md` together at this one combined gate. The approved `PLAN.md` is the durable execution state.
-4. **Tracker PLAN attachment.** Sync when the source has a real tracker key (Linear/Jira/etc.) and a tracker MCP is connected. Sync `PLAN.md` onto that issue per §7 (first attach). Skip when there is no tracker key (raw-intent / local-only).
+4. **Tracker PLAN attachment.** Sync when the source has a real tracker key (Linear/Jira/etc.) and a tracker MCP is connected. Sync `PLAN.md` onto that issue per §7 (first attach). Skip when there is no tracker key (raw-intent / local-only). Rewrite `STATUS.md` and `.ai/task/_index.md` per `ai-dir`.
 
 ### 4. Phase 3 — Implement
 
@@ -172,9 +180,9 @@ Ask the commit gate via `AskUserQuestion`. Option (a): developer **auto-commits*
 1. Pick the next runnable group(s): dependencies satisfied, not yet `[x] committed`.
 2. Spawn **developer** with the pass Task `model`; consuming-repo picker wins, the skill `skills/implement-group/SKILL.md`, and its inputs: the group block, the `task-id`, the scout map (and, on a review re-dispatch, the accepted findings as its optional findings input).
 3. Handle `NEEDS:` escalations per the iron rule.
-4. On **DONE**: check the group's steps. Set `**Status:** [x] implemented` in `PLAN.md`. Sync the tracker PLAN attachment (§7). Run Phase 4 (§5) for that group. On **BLOCKED**: leave it unchecked. Show the reason. Stop that lane.
-5. Once review passes (or the user waives): set `[x] reviewed`. Then commit. Auto-commit uses the group's commit message. Review-each presents the diff and waits for approval. Set `[x] committed`. After every `PLAN.md` status write in this step, sync the tracker PLAN attachment (§7). Other agents that read the issue then see current progress.
-6. Repeat until all groups are committed or the user pauses. A later `/develop` resumes from `PLAN.md`.
+4. On **DONE**: check the group's steps. Set `**Status:** [x] implemented` in `PLAN.md`. Rewrite STATUS per `ai-dir`. Sync the tracker PLAN attachment (§7). Run Phase 4 (§5) for that group. On **BLOCKED**: leave it unchecked. Show the reason. Set STATUS phase `blocked`. Stop that lane.
+5. Once review passes (or the user waives): set `[x] reviewed`. Then commit. Auto-commit uses the group's commit message. Review-each presents the diff and waits for approval. Set `[x] committed`. After every `PLAN.md` status write in this step, rewrite STATUS and sync the tracker PLAN attachment (§7). Other agents that read the issue then see current progress.
+6. Repeat until all groups are committed or the user pauses. A later `/develop` resumes from `PLAN.md`. When every group is committed, run §8.
 
 ### 5. Phase 4 — Review
 
@@ -196,9 +204,9 @@ Keep the issue's `PLAN.md` file attachment aligned with `.ai/task/<task-id>/PLAN
 
 **When:** after PLAN approval (§3.4), and after every local `PLAN.md` status/step checkbox write during Implement/Review (§4).
 
-**Only when** `<task-id>` is a real tracker key **and** an issue-tracker MCP is connected. Otherwise do nothing (raw-intent / idea-only / MCP missing). If you skip because the MCP is absent, say so once.
+**Only when** `<task-id>` is a real tracker key **and** an issue-tracker MCP is connected. Otherwise do nothing (raw-intent / MCP missing). If you skip because the MCP is absent, say so once.
 
-**Idempotency marker** on `TICKET.md` (or the idea file when that is the source of truth):
+**Idempotency marker** on `TICKET.md`:
 
 ```markdown
 <!-- PLAN attachment: PLAN.md -->
@@ -220,7 +228,15 @@ Keep the issue's `PLAN.md` file attachment aligned with `.ai/task/<task-id>/PLAN
 
 **Failure:** do not block the implement/commit loop on attachment failure. Record the miss. Continue. Retry on the next progress write. Local `PLAN.md` remains authoritative.
 
-**Never** paste the full plan into the issue description as a substitute when file attachments work. Do not attach `TASK.md` here (plan is the execution/progress artifact). Subagents do not own this step. The orchestrator owns this step. Subagents lack tracker MCP. Subagents must not invent attachment APIs.
+**Never** paste the full plan into the issue description as a substitute when file attachments work. Do not attach `TASK.md` here (plan is the execution/progress artifact). Do not attach `STATUS.md`. Subagents do not own this step. The orchestrator owns this step. Subagents lack tracker MCP. Subagents must not invent attachment APIs.
+
+### 8. Close-out
+
+When every group is `[x] committed` (or legacy `[x] done`):
+
+1. Set `STATUS.md` phase `done`. Update `.ai/task/_index.md`.
+2. Follow `ai-dir` promote. Default is write nothing under `docs/` or `adr/`. Ask only when `DECISIONS.md` holds a fact a future agent would need without this task folder.
+3. Optional whole-task sweep (§5.3) may run before or after this step. It does not replace close-out.
 
 ## Decision Rules
 
@@ -229,9 +245,10 @@ Keep the issue's `PLAN.md` file attachment aligned with `.ai/task/<task-id>/PLAN
 - If a legacy group is plain `[x] done` → treat it as fully complete.
 - If the input is a tracker key or issue URL and a tracker MCP is connected → source 1.
 - If the tracker MCP is missing or the fetch fails → say so. Continue to the next source. Do not invent the ticket body.
-- If the input is `.ai/idea/<slug>/TASK_NN.md` → source 2. The idea file's tracker-key line wins.
+- If the input is `.ai/idea/<slug>/TASK_NN.md` with a recorded tracker key → source 2. Fetch Linear. The tracker wins.
+- If the input is `.ai/idea/<slug>/TASK_NN.md` with no recorded key → stop. Push first. Do not use `<slug>-task-NN`.
 - If the input is freeform intent → source 3. Do not ask the user to paste again. Do not ask for a PRD.
-- If nothing is given → ask once. Cover all three sources.
+- If nothing is given → ask once. Cover tracker key or freeform description.
 - If the derived raw-intent id is ambiguous or would collide → confirm with `AskUserQuestion`.
 - If the state dir already exists → ask resume vs overwrite.
 - If the ticket is trivial → propose the fast path. Never assume confirmation.
@@ -252,7 +269,9 @@ Keep the issue's `PLAN.md` file attachment aligned with `.ai/task/<task-id>/PLAN
 - MUST dispatch the reviewer role as `generalPurpose`. MUST NOT use `subagent_type: reviewer`.
 - MUST handle every `NEEDS:` escalation yourself. MUST NOT expect a subagent to spawn another subagent.
 - MUST write state under `.ai/task/<task-id>/`.
+- MUST follow `ai-dir` for bootstrap, STATUS, SCOUT, DECISIONS, and close-out.
 - MUST NOT invent a tracker key.
+- MUST NOT use `<slug>-task-NN` as a lasting task-id.
 - MUST NOT invent acceptance criteria, scope, or technical decisions the user did not state.
 - MUST NOT write `TASK.md`, `PLAN.md`, or application code yourself. Dispatch instead.
 - MUST NOT start Phase 2 on the standard path without explicit TASK approval.
@@ -261,7 +280,8 @@ Keep the issue's `PLAN.md` file attachment aligned with `.ai/task/<task-id>/PLAN
 - MUST NOT assume fast-path confirmation.
 - MUST NOT block the implement/commit loop on tracker attachment failure.
 - MUST NOT paste the full plan into the issue description when file attachments work.
-- MUST NOT attach `TASK.md` as the progress artifact.
+- MUST NOT attach `TASK.md` or `STATUS.md` as the progress artifact.
+- MUST NOT write a docs file per ticket. Close-out default is skip.
 - NEVER silently swap model families.
 - NEVER omit Task `model`.
 
@@ -269,13 +289,15 @@ Keep the issue's `PLAN.md` file attachment aligned with `.ai/task/<task-id>/PLAN
 
 Before you finish:
 
-- [ ] Source and `task-id` were resolved from the source order. No invented tracker key.
-- [ ] Resume used `PLAN.md` three-state Status. Implemented-but-unreviewed groups went through Phase 4.
+- [ ] Source and `task-id` were resolved from the source order. No invented tracker key. No `<slug>-task-NN` lasting id.
+- [ ] Resume used `STATUS.md` then `PLAN.md` three-state Status. Implemented-but-unreviewed groups went through Phase 4.
+- [ ] `SCOUT.md` and `DECISIONS.md` were persisted when scout or architect ran.
 - [ ] Each phase dispatched the named skill with that skill's inputs.
 - [ ] Every `NEEDS:` escalation was fulfilled by the orchestrator.
 - [ ] Reviewer ran as `generalPurpose`. Model was passed. Reviewer agent file and `review-implementation` were in the prompt.
 - [ ] Each group was reviewed (or waived) before commit.
 - [ ] Tracker PLAN attachment was synced when a real key and MCP were present. Or the skip was stated once.
+- [ ] Close-out set STATUS `done`. Docs/ADR promotion was skip or an `_index.md` row was added.
 - [ ] UI-view work followed the repo PR screenshot rule, or that section was skipped for a stated reason.
 - [ ] Fast path, if used, was confirmed. Artifacts were still written.
 
@@ -285,7 +307,13 @@ Before you finish:
 
 Input: `implement TICKET-123` with a tracker MCP connected.
 
-Expected: fetch the issue. `task-id` = `TICKET-123`. Write `TICKET.md` from the issue. Create `.ai/task/TICKET-123/`. Run the four phases.
+Expected: fetch the issue. `task-id` = `TICKET-123`. Write `TICKET.md` from the issue. Create `.ai/task/TICKET-123/` with STATUS and DECISIONS. Run the four phases.
+
+### Staging file without a key
+
+Input: `/develop .ai/idea/checkout/TASK_00.md` and the tracker-key comment is the placeholder.
+
+Expected: stop. Point to `push-issues`. Do not create `.ai/task/checkout-task-00/`.
 
 ### Raw intent
 
@@ -303,17 +331,18 @@ Expected: tell the user you resume at Phase 4. Review that group. Do not commit 
 
 Input: developer returns `NEEDS: scout` with a question.
 
-Expected: spawn scout. Append the scout map to the developer prompt. Re-dispatch. Do not ask the developer to spawn scout.
+Expected: spawn scout. Persist `SCOUT.md`. Append the scout map to the developer prompt. Re-dispatch. Do not ask the developer to spawn scout.
 
 ### Wrong skill
 
-Input: "build every ticket in `.ai/idea/checkout/`".
+Input: "build every ticket in story ENG-12".
 
-Expected: refuse this skill. Point to `deliver-story`.
+Expected: refuse this skill. Point to `deliver-story` with the parent tracker key.
 
 ## Failure Modes
 
 - Tracker MCP missing or fetch fails → say so. Continue to the next source. Do not invent the ticket body.
+- Staging idea file with no tracker key → stop. Push first.
 - Nothing given and the user does not answer → stop. Do not guess a source.
 - Derived `task-id` collides with an unrelated dir → confirm with `AskUserQuestion`. Do not overwrite.
 - Reviewer dispatched as `subagent_type: reviewer` → "Shell unavailable". Re-dispatch as `generalPurpose`. Do not treat that failure as a green review.
@@ -328,5 +357,6 @@ Expected: refuse this skill. Point to `deliver-story`.
 - `skills/implement-group/SKILL.md` — Phase 3 procedure. Pass this path to developer.
 - `skills/review-implementation/SKILL.md` — Phase 4 procedure. Pass this path to the reviewer role.
 - `agents/reviewer.md` — reviewer role. Read from `.cursor/agents/reviewer.md` when that copy is the runtime file.
-- `deliver-story` — whole-breakdown delivery. Do not invoke this skill as a function from there.
+- `skills/ai-dir/SKILL.md` — bootstrap, STATUS, SCOUT, DECISIONS, close-out.
+- `deliver-story` — whole-breakdown delivery from a Linear parent key. Do not invoke this skill as a function from there.
 - `address-review` — PR feedback rounds on an existing task.

@@ -23,6 +23,7 @@ aibits:
     - ~/agents/reviewer.md
     - ~/agents/scout.md
     - ~/agents/architect.md
+    - ~/skills/ai-dir
 ---
 
 # Address Review
@@ -31,7 +32,7 @@ aibits:
 
 Address code-review feedback for an existing `.ai/task/<task-id>/` in bounded rounds. You are the orchestrator. You run in the main thread. That thread is the only place that can spawn subagents.
 
-You own the human gates, the state files, every commit, and every review-thread reply. You never write triage/plan markdown or application code yourself.
+You own the human gates, the state files, every commit, and every review-thread reply. You never write triage/plan markdown or application code yourself. You do rewrite `STATUS.md` (phase `address-review`) per `ai-dir`.
 
 ## Activation
 
@@ -137,7 +138,7 @@ The numbered steps are the authority.
 
 This skill requires an existing `.ai/task/<task-id>/` (typically from `/develop`). If it is missing, ask once. Do not invent a task from review comments.
 
-On entry, read `review/INDEX.md` if it is present. Tell the user the current round and status before you act.
+On entry, read `review/INDEX.md` if it is present. Tell the user the current round and status before you act. Set `STATUS.md` phase to `address-review` per `ai-dir`.
 
 **Round status**
 

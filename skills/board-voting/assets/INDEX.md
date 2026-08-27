@@ -16,4 +16,4 @@ INDEX Decision MAY read `Adopt (liberum veto)`.
 1. Read this table before you debate a fork that may already have a vote.
 2. Open the linked BV for proposer rationale, per-seat votes, liberum veto, Decision, and implementation consensus if vetoed.
 3. For a new vote: follow the board-voting skill. Offer liberum veto before persist. Copy [`TEMPLATE.md`](./TEMPLATE.md). Append a row here.
-4. Binding next steps belong in [`.ai/adr/`](../adr/INDEX.md) when the Decision says so. Board votes do not replace ADRs.
+4. Binding next steps belong in [`.ai/adr/`](../adr/_index.md) when the Decision says so. Board votes do not replace ADRs. Living notes belong in [`.ai/docs/`](../docs/_index.md).

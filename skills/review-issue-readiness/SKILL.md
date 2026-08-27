@@ -2,8 +2,8 @@
 name: review-issue-readiness
 description: >-
   Run a fast, deterministic readiness gate over one TASK_NN.md (or every
-  ticket file in an .ai/idea/<slug>/ folder) before you declare it ready
-  for implementation. Use when someone asks "is this ticket ready",
+  ticket file in a staging .ai/idea/<slug>/ folder) before you declare it ready
+  for Linear. Use when someone asks "is this ticket ready",
   "check readiness", "gate this issue", "can we start this", "is this
   good to hand off", or before implementation starts. Run a fixed
   checklist — executable cold, testable acceptance criteria, explicit

@@ -46,7 +46,7 @@ Do not use this skill when:
 
 Usual files live under `.ai/task/<task-id>/review/R<n>/`. Write `REVIEW_TRIAGE.md` in that same round directory.
 
-Assume no stack. Read the consuming repo's `CLAUDE.md` and `AGENTS.md`. Read the scout map.
+Assume no stack. Read the consuming repo's `CLAUDE.md` and `AGENTS.md`. Read the scout map (`SCOUT.md` when present).
 
 This skill runs inside the triaging agent. Do not spawn a Task. Do not select a model.
 

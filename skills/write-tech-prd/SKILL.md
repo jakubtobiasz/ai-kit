@@ -4,7 +4,7 @@ description: >-
   Write a structured TECH_PRD.md from a technical initiative (refactor,
   tech debt, platform improvement, performance work, DX change), or refine
   an existing one. Use at the start of an engineering-led initiative that
-  is too large or unclear to write as tickets. Also use when
+  is too large or unclear to write as tickets. Also use when the staging
   .ai/idea/<slug>/TECH_PRD.md already exists and needs an update. Write
   concrete technical requirements, constraints, affected areas,
   migration and rollout expectations, and success metrics. Triggers
@@ -19,6 +19,7 @@ aibits:
   deps:
     - ~/skills/grill-me
     - ~/skills/asd-ste100
+    - ~/skills/ai-dir
 ---
 
 # Write Tech PRD
@@ -55,12 +56,14 @@ Do not use this skill when:
 Required input:
 
 - What is being changed and why, in the requester's own words
-- The idea slug in kebab-case. The slug sets `.ai/idea/<slug>/`.
+- The idea slug in kebab-case. The slug sets the staging path `.ai/idea/<slug>/`.
 - If `.ai/idea/<slug>/TECH_PRD.md` exists, that file is required input too. Read it in full as the current draft before you ask anything.
 
 When grounding matters, read the repo's root `AGENTS.md` / `CLAUDE.md` and the affected modules before you lock requirements. Do not invent paths or patterns. Do not assume a stack.
 
-A TECH_PRD is a durable artifact. Write it in English STE. Do not translate it into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`. Match the human's language in live chat only.
+A staging `TECH_PRD.md` is not a durable bucket. Linear is the source of truth after `push-issues`. Write the draft in English STE. Do not translate it into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`. Match the human's language in live chat only.
+
+Before the first write, follow `ai-dir` bootstrap. Ensure `.ai/idea/` is gitignored.
 
 ## Workflow
 
@@ -195,4 +198,5 @@ Expected: do not write that path. Ask. Use real packages from the repo.
 - `write-prd` — business or user product initiatives.
 - `split-prd-into-issues` — file skeleton after the TECH_PRD is approved. Not part of this procedure.
 - `grill-me` — adversarial review of the locked TECH_PRD. Not part of this procedure.
-- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on durable artifacts.
+- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on the staging draft (it becomes the Linear attachment)
+- `skills/ai-dir/SKILL.md` — bootstrap and gitignore `.ai/idea/`

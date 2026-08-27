@@ -1,37 +1,39 @@
 ---
 name: deliver-story
 description: >-
-  Deliver a whole approved story or epic. Deliver every ticket of a
-  .ai/idea/<slug>/ breakdown as reviewed, resumable implementations. Run those
-  implementations in dependency waves. Use this skill when the user wants the
-  entire breakdown built rather than one ticket. Triggers include "deliver this
-  story", "run the whole breakdown", "execute the epic", "build every ticket",
-  "deliver .ai/idea/<slug>". Read the parent (STORY.md/EPIC.md) and each
-  TASK_NN.md. Build a wave graph from the Depends on fields. Abort loudly on a
-  cycle before any state is written. Ask one story mode up front. Gated mode
-  keeps every per-ticket gate live. Gated mode runs tickets strictly
-  sequentially. Autonomous mode waives gates. Autonomous mode allows
-  within-wave file-disjoint parallelism. Then run each ticket through the same
-  Refine, Split, Implement, and Review dispatch that develop uses. Resume from
-  per-ticket .ai/task/<id>/ PLAN states. Do NOT use for a single ticket (that
-  is develop). Do NOT use to draft/scope tickets from scratch (that is the
+  Deliver a whole approved story or epic from a Linear parent key.
+  Deliver every child ticket as reviewed, resumable implementations. Run
+  those implementations in dependency waves. Use this skill when the user
+  wants the entire breakdown built rather than one ticket. Triggers include
+  "deliver this story", "run the whole breakdown", "execute the epic",
+  "build every ticket", "deliver ENG-12". Fetch the parent and its children
+  from the tracker. Build a wave graph from tracker dependency links. Abort
+  loudly on a cycle before any state is written. Ask one story mode up front.
+  Gated mode keeps every per-ticket gate live. Gated mode runs tickets
+  strictly sequentially. Autonomous mode waives gates. Autonomous mode allows
+  within-wave file-disjoint parallelism. Then run each ticket through the
+  same Refine, Split, Implement, and Review dispatch that develop uses.
+  Resume from per-ticket .ai/task/<id>/ PLAN and STATUS states. Do NOT use
+  an .ai/idea/ path (push first). Do NOT use for a single ticket (that is
+  develop). Do NOT use to draft/scope tickets from scratch (that is the
   delivery-planner flow).
-argument-hint: "[path to .ai/idea/<slug>/ or its STORY.md / EPIC.md]"
+argument-hint: "[parent tracker key]"
 license: MIT
 metadata:
   version: "1.0.0"
 aibits:
   deps:
     - ~/skills/develop
+    - ~/skills/ai-dir
 ---
 
 # Deliver Story
 
 ## Purpose
 
-Deliver a whole `.ai/idea/<slug>/` breakdown. Run its tickets in dependency waves. You are the orchestrator. You run in the main thread. That thread is the only place that can spawn subagents.
+Deliver a whole tracker story or epic. Run its child tickets in dependency waves. You are the orchestrator. You run in the main thread. That thread is the only place that can spawn subagents.
 
-You own the wave graph, the story mode, every gate, and every commit. You never write `TASK.md`, `PLAN.md`, or application code yourself.
+You own the wave graph, the story mode, every gate, and every commit. You never write `TASK.md`, `PLAN.md`, or application code yourself. You do write derived `.ai` state per `ai-dir`.
 
 `develop` is not a callable subroutine. `develop` is a main-thread skill. One main-thread skill cannot invoke another as a function. The per-ticket dispatch and gate logic below is a deliberate, limited restatement of develop's mechanics. It is not a call into `develop`.
 
@@ -41,9 +43,9 @@ You own the wave graph, the story mode, every gate, and every commit. You never 
 
 Use this skill when:
 
-- the user wants every ticket in an approved `.ai/idea/<slug>/` breakdown built
-- the input is `.ai/idea/<slug>/` or its `STORY.md` / `EPIC.md`
-- work must resume from per-ticket `.ai/task/<id>/` PLAN states
+- the user wants every child of an approved tracker story or epic built
+- the input is a parent tracker key or issue URL
+- work must resume from per-ticket `.ai/task/<id>/` PLAN and STATUS states
 
 ### Do not use when
 
@@ -52,6 +54,7 @@ Do not use this skill when:
 - the user wants a single ticket built (`develop`)
 - the user wants tickets drafted or scoped from scratch (`delivery-planner`)
 - the user wants PR or code-review follow-ups on one existing task (`address-review`)
+- the input is an `.ai/idea/<slug>/` path (push first, then pass the parent key)
 
 ## Context
 
@@ -79,11 +82,11 @@ Each dispatch passes the assigned skill's file path plus that skill's declared i
 
 ```mermaid
 flowchart TD
-    Start([/deliver-story]) --> Resolve["Read parent + every TASK_NN.md — §1"]
+    Start([/deliver-story]) --> Resolve["Fetch parent + children from tracker — §1"]
     Resolve --> Cycle{"Dependency cycle? — §1"}
     Cycle -->|yes| Abort([Abort: name the cycle, no .ai/task/ state written])
     Cycle -->|no| Resume{"Existing .ai/task/ state? — §0"}
-    Resume -->|resume| Rebuild["Rebuild parent cache from PLAN states — §0"]
+    Resume -->|resume| Rebuild["Rebuild task _index from PLAN states — §0"]
     Resume -->|fresh| Mode["Ask story mode once — §2"]
     Rebuild --> Mode
     Mode --> NextWave{"Next runnable wave? — §3"}
@@ -92,7 +95,7 @@ flowchart TD
     Wave --> Ticket["Per-ticket pipeline per lane — §4"]
     Ticket --> Gate{"Blocked lane? — §5"}
     Gate -->|yes| Hold["Hold its dependents, continue independent lanes — §5"]
-    Gate -->|no| Progress["Suffix parent task list — §6"]
+    Gate -->|no| Progress["Update task _index — §6"]
     Hold --> Progress
     Progress --> NextWave
 ```
@@ -101,19 +104,19 @@ The numbered steps are the authority.
 
 ### 0. Resume
 
-`.ai/task/<task-id>/PLAN.md` states are **authoritative**. The parent task list is a derived cache. On entry, before you act, reconcile the two. Tell the user where you resume.
+Follow `ai-dir` bootstrap if `.ai/AGENTS.md` is missing. `.ai/task/<task-id>/PLAN.md` states are **authoritative**. `.ai/task/_index.md` and `STATUS.md` are derived. On entry, before you act, reconcile them. PLAN wins. Tell the user where you resume.
 
-1. For each ticket, read its `.ai/task/<task-id>/`.
+1. For each child key, read its `.ai/task/<task-id>/` if it exists.
 2. A ticket whose every `PLAN.md` group is `[x] committed` (or a legacy plan whose groups are plain `[x] done`) is **delivered**. Skip it.
 3. A ticket with groups in progress resumes mid-pipeline per develop's own §0. Implemented-but-unreviewed groups route through Review before any commit.
-4. If the parent list's suffixes disagree with the PLAN states, the PLAN states win. Rewrite the parent suffixes to match (§6). Do not restructure the parent template.
+4. If `_index.md` or `STATUS.md` disagrees with PLAN, PLAN wins. Rewrite the derived files (§6).
 5. Then continue at the next runnable wave (§3). A ticket with no state dir yet has not started.
 
-### 1. Read the breakdown and build the wave graph
+### 1. Fetch the breakdown and build the wave graph
 
-1. **Resolve the parent.** The input is `.ai/idea/<slug>/` (or its `STORY.md` / `EPIC.md`). Read the parent and every `TASK_NN.md` child in the folder.
-2. **Derive each ticket's task-id** exactly as develop does for an idea file. Parse the ticket's trailing `<!-- Tracker key: ... -->` comment. A recorded real key wins. Otherwise `<slug>-task-NN`, with `NN` copied as written (two digits) from the filename. Never invent a tracker key.
-3. **Build the dependency graph** from each child's `- **Depends on:**` field. `none` = a root. Otherwise a comma-separated list of `TASK_NN` tokens, each an edge from the named ticket. Wave 0 = every ticket with no unmet dependency. Wave N = every ticket whose dependencies all are in earlier waves.
+1. **Resolve the parent.** The input is a parent tracker key or issue URL. A tracker MCP is required. If it is missing, stop. Do not read `.ai/idea/`.
+2. **Fetch children.** Query the parent issue's child issues. Each child's key is `<task-id>`. Never invent a tracker key. Never use `<slug>-task-NN`.
+3. **Build the dependency graph** from each child's tracker dependency / blocked-by relations. No relations = a root. Wave 0 = every ticket with no unmet dependency. Wave N = every ticket whose dependencies all are in earlier waves.
 4. **Cycle check FIRST.** If the edges do not form a DAG (some tickets never become runnable), **abort**. Name the offending tickets in the cycle. Do this **before** creating any `.ai/task/` state. A cycle-aborted run writes nothing.
 
 Create state only after the graph is clean.
@@ -144,10 +147,10 @@ Each ticket runs the same four phase dispatches as develop. The story mode (§2)
 
 Do not invoke `develop` as a function. Restate the loop here.
 
-1. **Write TICKET.md.** Create `.ai/task/<task-id>/`. Write the child `TASK_NN.md` verbatim to `TICKET.md`. The idea file's tracker-key line stays authoritative.
-2. **Refine.** Recon on demand (spawn **scout**, and **architect** for a real design fork). Then spawn **developer** (pass Task `model`; consuming-repo picker wins) with the skill `skills/refine-task/SKILL.md`, and its inputs, to write `TASK.md`. **Gated:** present `TASK.md` for approval. Loop until approved. **Autonomous:** the gate is waived. Proceed.
+1. **Write TICKET.md.** Create `.ai/task/<task-id>/` per `ai-dir` new task dir. Fetch the child issue. Write `TICKET.md` from the tracker. Linear wins on divergence.
+2. **Refine.** Recon on demand (spawn **scout**, persist `SCOUT.md`, and **architect** for a real design fork, append `DECISIONS.md`). Then spawn **developer** (pass Task `model`; consuming-repo picker wins) with the skill `skills/refine-task/SKILL.md`, and its inputs, to write `TASK.md`. **Gated:** present `TASK.md` for approval. Loop until approved. **Autonomous:** the gate is waived. Proceed.
 3. **Split.** Spawn **developer** (pass Task `model`; consuming-repo picker wins) with the skill `skills/split-task-into-plan/SKILL.md`, and its inputs, to write `PLAN.md`. **Gated:** present `PLAN.md` (graph, group titles, per-group commit messages, dependencies). Loop until approved. **Autonomous:** the gate is waived. Proceed. After approval, sync `PLAN.md` onto the tracker issue when the ticket has a real tracker key. Use the same procedure as develop §7.
-4. **Implement + Review** per group, following develop's §4/§5 loop. Spawn **developer** (pass Task `model`; consuming-repo picker wins) with `skills/implement-group/SKILL.md`. On **DONE**, set `[x] implemented`. Then spawn the **reviewer** role via Task `generalPurpose`. Do not use `subagent_type: reviewer`. Take the pass Task `model`; consuming-repo picker wins. Prompt: Read the reviewer agent (`agents/reviewer.md` or `.cursor/agents/reviewer.md`). Then follow `skills/review-implementation/SKILL.md` over the group's diff. Loop findings back to the developer. Pass accepted findings as its optional findings input. Continue until the review is clean or waived. Then set `[x] reviewed`. Then commit. **Commit gate:** gated mode presents each group's diff and waits (review-each). Autonomous mode uses the story-wide mode chosen in §2. You own every commit. Set `[x] committed`. After every `PLAN.md` progress write, sync the tracker PLAN attachment again (develop §7). Other agents then see live checkboxes on the issue.
+4. **Implement + Review** per group, following develop's §4/§5 loop. Spawn **developer** (pass Task `model`; consuming-repo picker wins) with `skills/implement-group/SKILL.md`. On **DONE**, set `[x] implemented`. Rewrite STATUS per `ai-dir`. Then spawn the **reviewer** role via Task `generalPurpose`. Do not use `subagent_type: reviewer`. Take the pass Task `model`; consuming-repo picker wins. Prompt: Read the reviewer agent (`agents/reviewer.md` or `.cursor/agents/reviewer.md`). Then follow `skills/review-implementation/SKILL.md` over the group's diff. Loop findings back to the developer. Pass accepted findings as its optional findings input. Continue until the review is clean or waived. Then set `[x] reviewed`. Then commit. **Commit gate:** gated mode presents each group's diff and waits (review-each). Autonomous mode uses the story-wide mode chosen in §2. You own every commit. Set `[x] committed`. After every `PLAN.md` progress write, rewrite STATUS and sync the tracker PLAN attachment again (develop §7). Other agents then see live checkboxes on the issue.
 5. On a group **BLOCKED** return, leave it unchecked. Handle it per §5.
 
 ### 5. Wave gating and blocked-lane isolation
@@ -157,14 +160,16 @@ Do not invoke `develop` as a function. Restate the loop here.
 
 ### 6. Progress tracking
 
-- After a ticket is delivered, append a status suffix to **its** entry in the parent's numbered task list — for example `1. [TASK_00](TASK_00.md) — Create refine-task skill — delivered (<task-id>)`. Use `— in progress`, `— delivered (<task-id>)`, or `— BLOCKED (<reason>)`. An untouched ticket keeps no suffix. Edit only the suffix. **Do not restructure the parent template**.
-- The parent list is a derived cache of the authoritative per-ticket `PLAN.md` states. Whenever the two disagree (notably on resume, §0), rebuild the suffixes from the PLAN states.
-- **Resumable.** A later invocation reads the graph again. It skips delivered tickets. It starts the next runnable wave.
+- After every PLAN status write, rewrite that ticket's `STATUS.md` and `.ai/task/_index.md` per `ai-dir`. PLAN wins.
+- When a ticket is delivered, set its `_index` phase to `done`. Then follow develop §8 close-out for that ticket (docs/ADR default skip).
+- **Resumable.** A later invocation fetches the parent again. It skips delivered tickets. It starts the next runnable wave.
 
 ## Decision Rules
 
+- If no tracker MCP is connected → stop. Do not read `.ai/idea/`.
+- If the input is an `.ai/idea/` path → stop. Push first. Then take the parent key.
 - If the dependency edges are not a DAG → abort. Name the cycle. Write no `.ai/task/` state.
-- If PLAN states disagree with parent suffixes → PLAN states win. Rewrite suffixes only.
+- If PLAN states disagree with STATUS or `_index.md` → PLAN wins. Rewrite the derived files.
 - If every group on a ticket is `[x] committed` (or legacy `[x] done`) → skip that ticket.
 - If a ticket has `[x] implemented` without `[x] reviewed` → Review before any commit.
 - If story mode is gated → sequential tickets. Every TASK/PLAN/commit gate stays live. No within-wave parallelism.
@@ -184,12 +189,13 @@ Do not invoke `develop` as a function. Restate the loop here.
 - MUST dispatch the reviewer role as `generalPurpose`. MUST NOT use `subagent_type: reviewer`.
 - MUST handle every `NEEDS:` escalation yourself.
 - MUST abort on a dependency cycle before any `.ai/task/` state is written.
+- MUST fetch children from the tracker. MUST NOT read `.ai/idea/` as the breakdown.
 - MUST NOT invent a tracker key.
+- MUST NOT use `<slug>-task-NN` as a lasting task-id.
 - MUST NOT write `TASK.md`, `PLAN.md`, or application code yourself. Dispatch instead.
-- MUST NOT restructure the parent template. Edit only status suffixes.
 - MUST NOT waive per-ticket gates except by the user's explicit story-mode choice.
 - MUST NOT stop the whole story because one lane is BLOCKED.
-- MUST treat per-ticket `PLAN.md` as authoritative over the parent list.
+- MUST treat per-ticket `PLAN.md` as authoritative over STATUS and `_index.md`.
 - NEVER silently swap model families.
 - NEVER omit Task `model`.
 
@@ -197,42 +203,42 @@ Do not invoke `develop` as a function. Restate the loop here.
 
 Before you finish:
 
-- [ ] Parent and every `TASK_NN.md` were read. Wave graph was built from `Depends on`.
+- [ ] Parent and every child were fetched from the tracker. Wave graph was built from tracker dependency links.
 - [ ] Cycle check ran before any `.ai/task/` write.
 - [ ] Story mode was asked once up front.
 - [ ] `develop` was not invoked as a function.
 - [ ] Each ticket used refine-task, split-task-into-plan, implement-group, and review-implementation.
 - [ ] Reviewer ran as `generalPurpose`. Model was passed.
 - [ ] Every `NEEDS:` escalation was fulfilled by the orchestrator.
-- [ ] Resume used per-ticket PLAN three-state Status.
-- [ ] Parent suffixes match PLAN states. The parent template was not restructured.
+- [ ] Resume used per-ticket PLAN three-state Status and STATUS.md.
+- [ ] `.ai/task/_index.md` matches PLAN states.
 - [ ] BLOCKED lanes held dependents only. Independent lanes continued.
 
 ## Examples
 
 ### Fresh breakdown, gated
 
-Input: `deliver .ai/idea/checkout/` with three tickets, `TASK_01` depends on `TASK_00`.
+Input: `deliver ENG-12` with three children. ENG-14 is blocked by ENG-13.
 
-Expected: cycle check passes. Ask story mode. User picks gated. Run `TASK_00` through the full pipeline with live gates. Then `TASK_01`. Then `TASK_02` if it is a root or its deps are delivered. Suffix the parent list. Do not call `develop`.
+Expected: cycle check passes. Ask story mode. User picks gated. Run ENG-13 through the full pipeline with live gates. Then ENG-14. Update `_index.md`. Do not call `develop`. Do not read `.ai/idea/`.
 
 ### Cycle
 
-Input: `TASK_00` depends on `TASK_01`. `TASK_01` depends on `TASK_00`.
+Input: ENG-13 blocks ENG-14. ENG-14 blocks ENG-13.
 
 Expected: abort. Name both tickets. Write no `.ai/task/` state.
 
 ### BLOCKED lane
 
-Input: wave 0 ticket `TASK_00` returns BLOCKED. `TASK_02` does not depend on it.
+Input: wave 0 ticket ENG-13 returns BLOCKED. ENG-15 does not depend on it.
 
-Expected: show which ticket and why. Hold `TASK_00` dependents. Continue `TASK_02`. Do not stop the story.
+Expected: show which ticket and why. Hold ENG-13 dependents. Continue ENG-15. Do not stop the story.
 
 ### Resume
 
-Input: `/deliver-story .ai/idea/checkout/` and `TASK_00` groups are `[x] committed`. `TASK_01` has `[x] implemented` without `[x] reviewed`.
+Input: `/deliver-story ENG-12` and ENG-13 groups are `[x] committed`. ENG-14 has `[x] implemented` without `[x] reviewed`.
 
-Expected: skip `TASK_00`. Route `TASK_01` through Review before commit. Rebuild parent suffixes from PLAN states.
+Expected: skip ENG-13. Route ENG-14 through Review before commit. Rebuild `_index.md` from PLAN states.
 
 ### Wrong skill
 
@@ -242,17 +248,18 @@ Expected: refuse this skill. Point to `develop`.
 
 ## Failure Modes
 
-- Parent path missing → ask once for `.ai/idea/<slug>/` or its `STORY.md` / `EPIC.md`. Do not guess a slug.
+- Parent key missing → ask once for a parent tracker key. Do not guess. Do not open `.ai/idea/`.
+- Tracker MCP missing → stop. Staging is not the breakdown.
 - Dependency cycle → abort. Name the tickets. Write nothing.
-- Tracker key comment is the placeholder → use `<slug>-task-NN`. Do not invent a key.
 - Reviewer dispatched as `subagent_type: reviewer` → "Shell unavailable". Re-dispatch as `generalPurpose`.
 - One ticket BLOCKED → isolate that lane. Continue independent lanes.
-- Parent suffixes drift from PLAN states → rebuild suffixes. Do not restart delivered tickets.
+- STATUS or `_index.md` drift from PLAN states → rebuild derived files. Do not restart delivered tickets.
 - Temptation to call `develop` → restate §4 here instead.
 
 ## References
 
 - `skills/develop/SKILL.md` — per-ticket loop and tracker PLAN sync (§4, §5, §7). Read as the restatement source. Do not invoke it.
+- `skills/ai-dir/SKILL.md` — bootstrap, STATUS, `_index`, close-out.
 - `skills/refine-task/SKILL.md` — Refine. Pass this path to developer.
 - `skills/split-task-into-plan/SKILL.md` — Split. Pass this path to developer.
 - `skills/implement-group/SKILL.md` — Implement. Pass this path to developer.

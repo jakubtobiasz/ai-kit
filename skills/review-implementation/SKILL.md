@@ -59,7 +59,7 @@ Do not use this skill when:
 
 Usual files live under `.ai/task/<task-id>/`. Per-group review uses that group's block in `PLAN.md` or `review/R<n>/POST_REVIEW_PLAN.md`.
 
-Assume no stack. Read the consuming repo's `CLAUDE.md` and `AGENTS.md`. Read the scout map if one was already produced earlier in this task. Never assume conventions from outside this repo.
+Assume no stack. Read the consuming repo's `CLAUDE.md` and `AGENTS.md`. Read the scout map if one was already produced earlier in this task (`.ai/task/<id>/SCOUT.md`). Never assume conventions from outside this repo.
 
 This skill runs inside the reviewing agent. Do not spawn a Task. Do not select a model.
 

@@ -33,9 +33,10 @@ Liberum veto never deletes dissent. INDEX may show `Adopt (liberum veto)`.
 
 | Put it elsewhere                         | Why                            |
 | ---------------------------------------- | ------------------------------ |
-| Binding architecture constraints         | [`.ai/adr/`](../adr/AGENTS.md) |
-| Ticket refine / plan / review scratch    | [`.ai/task/`](../task/)        |
-| Product / tech PRDs and issue breakdowns | [`.ai/idea/`](../idea/)        |
+| Binding architecture constraints         | [`.ai/adr/`](../adr/_index.md) |
+| Living notes                             | [`.ai/docs/`](../docs/_index.md) |
+| Ticket refine / plan / review scratch    | [`.ai/task/`](../task/_index.md) |
+| Product / tech PRDs and issue breakdowns | Linear (staging `.ai/idea/` is deleted after push) |
 
 A board vote is **advisory** unless the Decision says otherwise. Promote lasting constraints to an ADR. Then mirror them in project architecture rules when they bind day-to-day code.
 

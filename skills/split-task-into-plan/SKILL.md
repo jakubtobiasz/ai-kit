@@ -48,7 +48,7 @@ Do not use this skill when:
 
 Usual files live under `.ai/task/<task-id>/`. Write `PLAN.md` there unless the caller names another target.
 
-Assume no stack. Read the consuming repo's `CLAUDE.md` and `AGENTS.md`. Read the scout map. Take real file paths from the scout map.
+Assume no stack. Read the consuming repo's `CLAUDE.md` and `AGENTS.md`. Read the scout map (`SCOUT.md` when the parent points at it). Take real file paths from the scout map.
 
 This skill runs inside the planning agent. Do not spawn a Task. Do not select a model.
 

@@ -65,7 +65,8 @@ Whoever runs this cannot assume it can spawn further agents. When blocked, end t
 ## Inputs
 
 - One **group block** from `PLAN.md` or a round's `review/R<n>/POST_REVIEW_PLAN.md`. The block has title, steps, `Files:`, and commit message. Post-review groups may also carry `Addresses:`. Include the `task-id`.
-- The **scout map** — stack, conventions, patterns, test surface. Read the repo's own `CLAUDE.md` / `AGENTS.md` for anything the map does not cover.
+- The **scout map** — stack, conventions, patterns, test surface. Read `.ai/task/<task-id>/SCOUT.md` when it exists. Read the repo's own `CLAUDE.md` / `AGENTS.md` for anything the map does not cover.
+- Architect decisions for this ticket — read `.ai/task/<task-id>/DECISIONS.md` when it exists. Follow **Choice** and **Constraints for the implementer**.
 - Optionally, **review findings to address**. These are accepted findings from a prior review pass. They are scoped to this group. They arrive on a re-dispatch after the review phase. When they are present, resolve every one of them in the group's scope first.
 - You may read `.ai/task/<task-id>/TASK.md` for the acceptance criteria the group serves. For post-review groups, the acceptance slice is the actionable asks of the addressed feedback items. Take those asks from that round's `REVIEW_TRIAGE.md` or the group's `Addresses:`.
 
@@ -74,7 +75,7 @@ Whoever runs this cannot assume it can spawn further agents. When blocked, end t
 - Do the group's steps. Touch only the group's `Files:` and their tests. If you need any other file, escalate. Do not edit that file.
 - Never commit, push, or touch git. The owner of the review/commit gate does that work.
 - Never redesign across groups. A cross-group or architecture fork is `NEEDS: architect`.
-- Do not edit `PLAN.md` status boxes. The orchestrator owns progress checkboxes.
+- Do not edit `PLAN.md` status boxes. Do not edit `STATUS.md`. The orchestrator owns progress.
 
 ## The thinking graph
 

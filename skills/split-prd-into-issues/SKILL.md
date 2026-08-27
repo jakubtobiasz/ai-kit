@@ -3,12 +3,13 @@ name: split-prd-into-issues
 description: >-
   Write a file-per-issue breakdown from an approved PRD.md, TECH_PRD.md,
   or a refined small idea — a parent file plus ordered TASK_NN.md stubs —
-  under .ai/idea/<slug>/. Use once an idea or PRD is settled and needs to
-  become tickets. Triggers include "break this down", "split the PRD",
-  "split the TECH_PRD", "turn this into tickets", "slice this into
-  issues", and "write the task files". Judge whether the work is a single
-  ticket, a story, or an epic. Then write the matching file skeleton
-  numbered from TASK_00 in dependency order. Do NOT use for writing
+  under the staging folder .ai/idea/<slug>/. Use once an idea or PRD is
+  settled and needs to become tickets. After approval, push-issues creates
+  Linear issues and deletes the slug. Triggers include "break this down",
+  "split the PRD", "split the TECH_PRD", "turn this into tickets", "slice
+  this into issues", and "write the task files". Judge whether the work is
+  a single ticket, a story, or an epic. Then write the matching file
+  skeleton numbered from TASK_00 in dependency order. Do NOT use for writing
   ticket bodies (title, description, Gherkin acceptance criteria) — that
   is write-issue's job. Do NOT use for raw ideation before the idea is
   refined.
@@ -16,6 +17,7 @@ argument-hint: "[path to PRD.md / TECH_PRD.md or refined idea slug]"
 aibits:
   deps:
     - ~/skills/asd-ste100
+    - ~/skills/ai-dir
 ---
 
 # Split PRD Into Issues
@@ -49,13 +51,15 @@ Do not use this skill when:
 
 Input is `PRD.md` (business) or `TECH_PRD.md` (technical) for larger work, or a refined idea for smaller work. The idea must already be scoped and settled.
 
-Prefer whichever file exists under `.ai/idea/<slug>/`. If both exist, ask which is the source of truth before slicing.
+Prefer whichever file exists under the staging path `.ai/idea/<slug>/`. If both exist, ask which is the source of truth before slicing.
 
-All files live in `.ai/idea/<slug>/`. Each ticket file is exactly one issue.
+All staging files live in `.ai/idea/<slug>/`. Each ticket file is exactly one future Linear issue.
 
 `write-issue` reuses `assets/task-template.md` from this skill for the body shape.
 
-Skeleton files are durable artifacts. Write English STE in any text you do fill (parent summary, task list titles). Do not translate into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`.
+Skeleton files are staging drafts. They are not a durable bucket. Write English STE in any text you do fill (parent summary, task list titles). Do not translate into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`.
+
+Before the first write, follow `ai-dir` bootstrap. Ensure `.ai/idea/` is gitignored.
 
 ## Workflow
 
@@ -197,4 +201,5 @@ Expected: write the skeleton only. Point to `write-issue` for bodies.
 - `write-issue` — ticket bodies after the skeleton exists.
 - `write-prd` / `write-tech-prd` — source documents when the idea is not yet a PRD.
 - `push-issues` — tracker create after tickets are approved. Not part of this procedure.
-- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on durable artifacts.
+- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on staging drafts
+- `skills/ai-dir/SKILL.md` — bootstrap and gitignore `.ai/idea/`

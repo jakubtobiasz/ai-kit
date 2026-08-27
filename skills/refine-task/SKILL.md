@@ -48,6 +48,8 @@ Do not use this skill when:
 
 Usual files live under `.ai/task/<task-id>/`. Write `TASK.md` there unless the caller names another target.
 
+Read `.ai/task/<task-id>/SCOUT.md` when it exists. Read `.ai/task/<task-id>/DECISIONS.md` when it exists. Those files are the canonical scout map and Decision log. The parent may also paste them.
+
 **Ground** means write paths and patterns that exist in the scout map. Do not invent them.
 
 Assume no stack. Read the consuming repo's `CLAUDE.md` and `AGENTS.md`. Read the scout map.
@@ -62,7 +64,7 @@ When acceptance criteria use Gherkin, apply `writing-gherkin-scenarios` if that 
 2. Read `assets/task-template.md`. Follow its structure exactly.
 3. Read the ticket in full.
 4. Read the scout map. The map may be empty for a trivial ticket.
-5. Read architect decisions. They may be empty.
+5. Read architect decisions from `DECISIONS.md` or from the parent prompt. They may be empty.
 6. Read the consuming repo's `CLAUDE.md` and `AGENTS.md` when the scout map does not cover a convention.
 7. Synthesize every template section. Do not copy ticket prose.
 8. If a required fact or design call is missing, stop. Return the matching escalation. Do not guess.

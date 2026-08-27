@@ -18,6 +18,8 @@ This rule governs durable artifacts in this repository and in trackers.
 
 Durable artifacts are files, commits, tickets, comments, labels, skills, rules, agent prompts, status reports, and published change text.
 
+Staging drafts under `.ai/idea/` are included. They become tracker items. Write them in English STE.
+
 Live chat with the human is out of scope except for the chat-language rule below.
 
 When this rule is loaded, English STE is mandatory for those artifacts. Frontmatter `alwaysApply: false` does not weaken the policy.

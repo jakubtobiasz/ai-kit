@@ -11,12 +11,14 @@ description: >-
   design forks where the human wants recorded multi-model dissent before
   coding. Do NOT use for binding lasting architecture (that is an ADR
   after the vote). Do NOT use for ticket refine/plan/review (.ai/task).
-  Do NOT use for PRDs (.ai/idea). Do NOT use for ordinary code review
+  Do NOT use for PRDs (Linear after push; staging is .ai/idea during draft).
+  Do NOT use for living notes (.ai/docs). Do NOT use for ordinary code review
   (review-implementation).
 argument-hint: "[proposal text or path to discuss]"
 aibits:
   deps:
     - ~/agents/architect.md
+    - ~/skills/ai-dir
 ---
 
 # Board voting
@@ -25,7 +27,7 @@ aibits:
 
 Run a short multi-model board on one concrete proposal. Persist the outcome so the repo has a searchable trail.
 
-Votes are advisory unless the Decision says they constrain practice. Lasting binding rules belong in `.ai/adr/`.
+Votes are advisory unless the Decision says they constrain practice. Lasting binding rules belong in `.ai/adr/`. Living notes belong in `.ai/docs/`.
 
 **Liberum veto:** after the board votes, the human MAY discard the board Decision. Then Adopt the proposer proposal. The question becomes how to implement, not whether.
 
@@ -43,7 +45,8 @@ Votes are advisory unless the Decision says they constrain practice. Lasting bin
 - The choice is a small coding preference with no durable fork.
 - The outcome should be binding architecture now. File an ADR after the vote if needed.
 - The work is ticket refine, plan, or review scratch. Use `.ai/task/`.
-- The work is a product or tech PRD. Use `.ai/idea/`.
+- The work is a product or tech PRD. Draft in `.ai/idea/` then push to Linear.
+- The work is a living note. Use `.ai/docs/`.
 - The work is ordinary code review. Use `review-implementation`.
 
 Do not invent a board vote for every small coding choice. Read `.ai/board-voting/INDEX.md` first.
@@ -53,6 +56,8 @@ Do not invent a board vote for every small coding choice. Read `.ai/board-voting
 Consuming-repo layout is `.ai/board-voting/`. Conventions: `assets/AGENTS.md`. File shape: `assets/TEMPLATE.md`. Empty index shape: `assets/INDEX.md`.
 
 If `.ai/board-voting/` is missing, copy those three assets into `.ai/board-voting/` before the first persist.
+
+If `.ai/AGENTS.md` is missing, follow `ai-dir` bootstrap first.
 
 Each seat is an `architect` agent. Pass that seat's `model` explicitly. Seat models in the example default board below are skill-mandated. They apply to board voting only. They override the consuming-repo architect default for those seats.
 
@@ -299,11 +304,13 @@ Expected: use those seats. Do not force the example default three.
 | May recommend an ADR | May cite a BV as Context |
 | Liberum veto → Adopt + impl consensus | Still promote to ADR if binding |
 
-Promote lasting constraints to an ADR. Then mirror them in project architecture rules when they bind day-to-day code.
+Promote lasting constraints to an ADR. Then mirror them in project architecture rules when they bind day-to-day code. Non-binding "how this works now" belongs in `.ai/docs/`.
 
 ## References
 
 - `assets/AGENTS.md` — copy into `.ai/board-voting/AGENTS.md` if missing. Consuming-repo conventions.
 - `assets/TEMPLATE.md` — copy into `.ai/board-voting/TEMPLATE.md` if missing. BV file shape.
 - `assets/INDEX.md` — copy into `.ai/board-voting/INDEX.md` if missing. Empty index + how-to.
+- `skills/ai-dir/SKILL.md` — root `.ai/` bootstrap, docs, adr catalogs.
 - `.ai/adr/` — binding architecture.
+- `.ai/docs/` — living notes.

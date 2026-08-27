@@ -49,7 +49,7 @@ If the caller asks for a grill and a rewrite, grill only. Return findings. Do no
 
 ## Context
 
-The target is one file, or a whole `.ai/idea/<slug>/` directory. In a directory, the artifact includes every ticket, `PRD.md`, `TECH_PRD.md`, parent file, and any `references/`.
+The target is one file, or a whole staging directory `.ai/idea/<slug>/`. In a directory, the artifact includes every ticket, `PRD.md`, `TECH_PRD.md`, parent file, and any `references/`. Grill during the draft window. After push, the Linear issue (and its PRD attachment) is the source of truth.
 
 This skill often runs as a subagent. There is no live user. The caller applies changes after the human chooses.
 

@@ -5,8 +5,9 @@ description: >-
   business idea, or refine an existing PRD.md. Use at the start of a large
   business initiative when the idea is too large or unclear to write as
   tickets and needs a shared business spec first (problem, goals, users,
-  requirements, success metrics, scope). Write or update PRD.md in
-  .ai/idea/<slug>/. Triggers include "write a PRD", "draft a PRD", "create
+  requirements, success metrics, scope). Write or update a staging PRD.md
+  in .ai/idea/<slug>/. That folder is a draft window. Push attaches it to
+  Linear and then deletes the slug. Triggers include "write a PRD", "draft a PRD", "create
   a PRD", "draft a product spec", "write the requirements doc", "refine the
   PRD", "we need a spec for X", "flesh this out before we ticket it", and
   "scope this initiative properly". Run interactive Q&A, section by
@@ -20,6 +21,7 @@ aibits:
   deps:
     - ~/skills/grill-me
     - ~/skills/asd-ste100
+    - ~/skills/ai-dir
 ---
 
 # Write PRD
@@ -57,10 +59,12 @@ Do not use this skill when:
 Required input:
 
 - What is being built and why, in the requester's own words
-- The idea slug in kebab-case. The slug sets `.ai/idea/<slug>/`.
+- The idea slug in kebab-case. The slug sets the staging path `.ai/idea/<slug>/`.
 - If `.ai/idea/<slug>/PRD.md` exists, that file is required input too. Read it in full as the current draft before you ask anything.
 
-A PRD is a durable artifact. Write it in English STE. Do not translate it into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`. Match the human's language in live chat only.
+A staging `PRD.md` is not a durable bucket. Linear (the attached file on the parent or sole issue) is the source of truth after `push-issues`. Write the draft in English STE so the pushed text stays parseable. Do not translate it into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`. Match the human's language in live chat only.
+
+Before the first write, follow `ai-dir` bootstrap. Ensure `.ai/idea/` is gitignored.
 
 Stay in business outcomes. Do not prescribe module boundaries, data models, or migration plans.
 
@@ -187,4 +191,5 @@ Expected: stop. Point to `write-tech-prd`.
 - `write-tech-prd` — engineering-led initiatives.
 - `split-prd-into-issues` — file skeleton after the PRD is approved. Not part of this procedure.
 - `grill-me` — adversarial review of the locked PRD. Not part of this procedure.
-- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on durable artifacts.
+- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on the staging draft (it becomes the Linear attachment)
+- `skills/ai-dir/SKILL.md` — bootstrap and gitignore `.ai/idea/`

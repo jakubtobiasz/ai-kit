@@ -1,11 +1,13 @@
 ---
 name: push-issues
 description: >-
-  Write real tracker issues from approved files in `.ai/idea/<slug>/`.
+  Write real tracker issues from approved staging files in `.ai/idea/<slug>/`.
   This procedure is tracker-agnostic and idempotent. It works from
   whichever tracker MCP is connected (Jira, Linear, or any other). Use
   once tickets are drafted and approved and need to become live issues.
-  Triggers include "push these to the tracker", "create the issues",
+  After every key, link, and PRD attachment succeeds, delete the slug.
+  A tracker MCP is required. Do not treat staging drafts as the durable
+  handoff. Triggers include "push these to the tracker", "create the issues",
   "send to Jira", "push to Linear", "create the tickets now", and an
   approved-tickets hand-off. Input: approved TASK_NN.md files plus an
   optional EPIC.md/STORY.md parent under .ai/idea/<slug>/. Always attach
@@ -14,23 +16,27 @@ description: >-
   then children, then dependency links. Record each returned key in its
   markdown file before the next issue is created so a partial run can
   resume without duplicating anything. Do NOT use to draft or refine
-  ticket content (that is split-prd-into-issues / write-issue), to clean
-  up the idea folder, to sync or update issues after creation, or to
-  authenticate a tracker MCP.
+  ticket content (that is split-prd-into-issues / write-issue), to sync or
+  update issues after creation, or to authenticate a tracker MCP.
 argument-hint: "[idea slug]"
 aibits:
   deps:
     - ~/skills/asd-ste100
     - ~/rules/asd-ste100.md
+    - ~/skills/ai-dir
 ---
 
 # Push Issues
 
 ## Purpose
 
-Write real tracker issues from approved files in `.ai/idea/<slug>/`. One file, one issue. The connected tracker does not matter. This skill only pushes. It does not draft, refine, or clean up.
+Write real tracker issues from approved staging files in `.ai/idea/<slug>/`. One file, one issue. The connected tracker does not matter. This skill creates issues, attaches PRDs, links dependencies, then deletes the slug.
 
-**The file is the source of truth.** Write every key a tracker returns into its markdown file before the next issue is created. That ordering is the whole idempotency mechanism. A re-run only ever creates what is still missing. It never creates what is already recorded.
+**The file is the source of truth until push completes.** Write every key a tracker returns into its markdown file before the next issue is created. That ordering is the whole idempotency mechanism. A re-run only ever creates what is still missing. It never creates what is already recorded.
+
+After every key, every required PRD attach, and every dependency link succeeds, delete `.ai/idea/<slug>/` per `ai-dir`. Linear (or the connected tracker) is then the source of truth.
+
+A tracker MCP is required. If none is connected, stop. Do not treat staging drafts as the durable handoff.
 
 Push the English STE text as-is. Do not translate titles or bodies into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`.
 
@@ -48,7 +54,6 @@ Use this skill when:
 Do not use this skill when:
 
 - the task is to draft or refine ticket content. Use `split-prd-into-issues` / `write-issue`.
-- the task is to clean up the idea folder
 - the task is to sync or update issues after creation
 - the task is to authenticate a tracker MCP
 - the files are not yet approved
@@ -81,7 +86,10 @@ flowchart TD
   Attach --> AllKeys{Every file has a key?}
   AllKeys -->|No| Fail[Stop. Report partial state]
   AllKeys -->|Yes| Links[Link dependencies]
-  Links --> Done[Report created / reused / attached]
+  Links --> DoneCheck{Push complete?}
+  DoneCheck -->|yes| Del[Delete .ai/idea/slug]
+  DoneCheck -->|no| Fail
+  Del --> Done[Report keys. Staging gone]
 ```
 
 The numbered steps are the authority.
@@ -90,7 +98,7 @@ The numbered steps are the authority.
 
 Check the available tools for a connected tracker MCP. It must be able to create issues, link them, and query for existing ones. Do not assume which product it is. The steps below do not need a specific product name. Jira and Linear are examples of any tracker MCP.
 
-- **None connected** → STOP. Report that the approved drafts in `.ai/idea/<slug>/` ARE the handoff. A later agent, or a live push once an MCP is connected, will create the issues from these files. Do nothing else.
+- **None connected** → STOP. A tracker MCP is required. Do not treat the staging drafts as the durable handoff. Report that Linear (or another tracker) must be connected. Then re-run this skill. Do nothing else.
 - **One connected** → continue at steps 2 to 6 using its create, link, query, and attachment operations.
 
 ### 2. Create the parent (if any)
@@ -166,7 +174,15 @@ Only start this once every issue in the folder has a recorded key. For each `TAS
 
 Record each completed link immediately, before you create the next link. Example: append `(linked)` next to the resolved reference in the `Depends on:` field. A resumed run can then tell which links already exist without re-querying everything.
 
-### 6. On any failure
+### 6. Delete staging
+
+Run only when every issue in the folder has a recorded key, every required PRD attach is recorded, and every required dependency link is recorded.
+
+Follow `ai-dir` delete-staging. Delete `.ai/idea/<slug>/`. Do not keep a copy in git.
+
+If any create, attach, or link is still missing, skip this step. Staging is the resume checkpoint.
+
+### 7. On any failure
 
 Stop immediately. Do not undo or remove anything already recorded. Every key, link, and PRD-attachment marker written so far stays exactly as recorded. Report:
 
@@ -174,39 +190,43 @@ Stop immediately. Do not undo or remove anything already recorded. Every key, li
 - what failed and why
 - what is left, so this skill can resume later
 
-A later run re-executes steps 1 to 5 unchanged. It skips everything already recorded. It only creates, links, or attaches what is missing. Never recreate an issue, link, or attachment that is already recorded. When a record is uncertain, query the tracker before you create anything.
+A later run re-executes steps 1 to 6 unchanged. It skips everything already recorded. It only creates, links, or attaches what is missing. It deletes staging only when the push is complete. Never recreate an issue, link, or attachment that is already recorded. When a record is uncertain, query the tracker before you create anything.
 
 ## Decision Rules
 
-- If no tracker MCP is connected → stop. The files are the handoff. Do nothing else.
+- If no tracker MCP is connected → stop. Staging is not the durable handoff. Do nothing else.
 - If a `<!-- Tracker key: ... -->` already holds a key → reuse it. Do not create again.
 - If the key record is uncertain → query the tracker before you create.
 - If the tracker did not return a key → do not record one. Stop and report.
 - If `PRD.md` or `TECH_PRD.md` exists → attach each file to the parent or sole issue.
 - If an attachment marker already names that file → skip that upload.
 - If the tracker has no attachment API → write a description link. Record the description-link-only marker. Do not skip silently.
-- If any create, attach, or link fails → stop. Keep all records. Report partial state.
+- If any create, attach, or link fails → stop. Keep all records. Keep staging. Report partial state.
+- If every key, attach, and link succeeded → delete `.ai/idea/<slug>/`.
 - If the human's chat is not English → still push the English STE text as-is.
 
 ## Constraints
 
-- MUST treat the markdown file as the source of truth.
+- MUST treat the markdown file as the source of truth until push completes.
 - MUST record each returned key before the next create.
 - MUST attach every on-disk `PRD.md` and `TECH_PRD.md` to the parent or sole issue.
 - MUST record `<!-- PRD attachment: … -->` before the next upload.
+- MUST delete `.ai/idea/<slug>/` after a complete push.
 - MUST push English STE as-is. MUST NOT translate into the human's chat language.
 - MUST NOT draft or revise ticket content.
 - MUST NOT invent a tracker key.
 - MUST NOT recreate an issue, link, or attachment that is already recorded.
+- MUST NOT delete staging while the push is partial.
+- MUST NOT treat staging drafts as the durable handoff when no tracker MCP is connected.
 - MUST NOT assume a specific tracker product except as an example of any tracker MCP.
 - NEVER undo records after a failure.
 
 ## Out of scope
 
-- Removing `.ai/idea/<slug>/` — offered by the calling agent only after every issue, link, and PRD attachment succeeds.
 - Two-way sync or updating issues after creation (including replacing a newer PRD revision — that is a deliberate re-run after you remove the `<!-- PRD attachment: … -->` marker).
 - Authenticating or connecting the tracker MCP.
 - Drafting or revising `PRD.md` / `TECH_PRD.md`.
+- Developing from staging files. After push, `develop` and `deliver-story` take tracker keys.
 
 ## Quality Checks
 
@@ -218,6 +238,7 @@ Before you finish:
 - [ ] PRD attached when present — every on-disk `PRD.md` / `TECH_PRD.md` is attached to the parent (or sole) issue, or explicitly recorded as description-link-only when attachments are unavailable.
 - [ ] Attachment marker before next upload — each `<!-- PRD attachment: … -->` written before the next file is prepared.
 - [ ] Links after all issues exist — dependency links only attempted once every issue file has a recorded key.
+- [ ] Staging deleted only after a complete push. Partial runs kept the slug.
 - [ ] Resumable — on failure, stopped cleanly, nothing recorded lost, partial state reported.
 - [ ] No double-create — an issue, link, or PRD attachment already recorded is never recreated. Uncertain records are queried first.
 - [ ] Titles and bodies were pushed as English STE. They were not translated into the human's chat language.
@@ -228,13 +249,19 @@ Before you finish:
 
 Input: approved `.ai/idea/guest-checkout/` and no issue-tracker MCP.
 
-Expected: stop. Report that the files are the handoff. Do not invent issues.
+Expected: stop. Report that a tracker MCP is required. Do not treat the files as the durable handoff. Do not invent issues.
 
 ### Resume after a partial run
 
 Input: `EPIC.md` already has `<!-- Tracker key: ENG-12 -->`. `TASK_00.md` has a key. `TASK_01.md` does not.
 
-Expected: reuse ENG-12 and the TASK_00 key. Create only TASK_01. Record its key before any further create.
+Expected: reuse ENG-12 and the TASK_00 key. Create only TASK_01. Record its key before any further create. Do not delete the slug yet.
+
+### Complete push
+
+Input: every child has a key, both PRDs attached, deps linked.
+
+Expected: delete `.ai/idea/catalog-import/`. Report the tracker keys. Later `/develop ENG-12` (or a child key) uses Linear.
 
 ### PRD present
 
@@ -244,13 +271,15 @@ Expected: attach both to the parent (or sole) issue. Record both attachment mark
 
 ## Failure Modes
 
-- No tracker MCP → stop. Files are the handoff.
-- Create succeeds but the key is not returned → do not record a fake key. Stop. Report.
-- Attach fails → stop. Keep issue keys already recorded. Report that attach is left.
-- Link fails → stop. Keep issue keys and attachment markers. Report remaining links.
+- No tracker MCP → stop. Staging is not the durable handoff.
+- Create succeeds but the key is not returned → do not record a fake key. Stop. Report. Keep staging.
+- Attach fails → stop. Keep issue keys already recorded. Keep staging. Report that attach is left.
+- Link fails → stop. Keep issue keys and attachment markers. Keep staging. Report remaining links.
+- Human asks to keep the idea folder after a complete push → refuse. Delete the slug.
 - Human asks to update an existing issue → refuse. This skill creates. It does not sync.
 
 ## References
 
 - `split-prd-into-issues` / `write-issue` — draft the files before this skill runs.
-- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on durable artifacts. Push as-is.
+- `skills/ai-dir/SKILL.md` — delete staging after a complete push. Gitignore `.ai/idea/`.
+- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on pushed ticket text. Push as-is.

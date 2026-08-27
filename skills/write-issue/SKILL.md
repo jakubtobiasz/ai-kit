@@ -7,7 +7,8 @@ description: >-
   of work. Use once a PRD or refined idea is sliced and one slice is ready
   to write as a complete ticket. Triggers include "write the ticket",
   "draft this issue", "write up this task", "turn this slice into a task",
-  and "flesh out TASK_NN". Fill the TASK_NN.md file in .ai/idea/<slug>/.
+  and "flesh out TASK_NN". Fill the staging TASK_NN.md file in
+  .ai/idea/<slug>/. Push sends it to Linear and then deletes the slug.
   Use the task-template.md shape from split-prd-into-issues. Use the
   writing-gherkin-scenarios skill for acceptance criteria. Do NOT use it
   to decide how work is sliced, ordered, or shaped into single ticket /
@@ -19,6 +20,7 @@ aibits:
     - ~/skills/writing-gherkin-scenarios
     - ~/skills/split-prd-into-issues
     - ~/skills/asd-ste100
+    - ~/skills/ai-dir
 ---
 
 # Write Issue
@@ -62,7 +64,7 @@ Use `../split-prd-into-issues/assets/task-template.md` for the file's shape. Do 
 
 Draft acceptance criteria with the `writing-gherkin-scenarios` skill. Do not draft them freehand. Use declarative Given/When/Then. Put one behavior in each scenario. Use concrete values. Cover the happy path plus the edge that would actually break it.
 
-A ticket is a durable artifact. Write it in English STE. Do not translate it into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`. Match the human's language in live chat only.
+A staging ticket is not a durable bucket. Linear is the source of truth after `push-issues`. Write the draft in English STE. Do not translate it into the human's chat language. See `skills/asd-ste100` and `rules/asd-ste100.md`. Match the human's language in live chat only.
 
 ## Workflow
 
@@ -158,4 +160,5 @@ Expected: flag the gap on the ticket. Do not invent a payment-failure policy.
 - `split-prd-into-issues` — slicing and skeleton. Use when the file does not exist.
 - `review-issue-readiness` — readiness gate after the body is written. Not part of this procedure.
 - `grill-me` — adversarial review. Not part of this procedure.
-- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on durable artifacts.
+- `skills/asd-ste100` and `rules/asd-ste100.md` — English STE on the staging draft
+- `skills/ai-dir/SKILL.md` — bootstrap and gitignore `.ai/idea/`
