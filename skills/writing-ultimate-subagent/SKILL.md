@@ -1,6 +1,10 @@
 ---
 name: writing-ultimate-subagent
 description: Create focused, reliable, and composable AI subagents. Use when designing a new subagent, improving an existing subagent, or turning a specialized responsibility into a reusable autonomous agent.
+aibits:
+  deps:
+    - ~/skills/asd-ste100
+    - ~/skills/writing-ultimate-skill
 ---
 
 # Subagent Writer
